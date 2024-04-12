@@ -807,6 +807,7 @@ void Animate()
 
 void Display()
 {
+	// initial timer
 	if (DebugOn != 0)
 		fprintf(stderr, "Starting Display.\n");
 
@@ -916,7 +917,7 @@ void Display()
 		glPushMatrix();
 		// SetMaterial(particle.r, particle.g, particle.b, 10.);
 		glTranslatef(particle.pos.x, particle.pos.y, particle.pos.z); // Translate to the position of the particle
-		OsuSphere(p_size, 10, 10);									  // Call your sphere drawing function
+		OsuSphere(p_size, 10, 10);									  // Call your sphere drawing function  // put in display list
 		glPopMatrix();
 	}
 
@@ -967,6 +968,7 @@ void Display()
 	// DoRasterString( 5.f, 5.f, 0.f, (char *)"Text That Doesn't" );
 
 	// swap the double-buffered framebuffers:
+	// take time
 
 	glutSwapBuffers();
 
