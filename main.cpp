@@ -808,6 +808,9 @@ void Animate()
 void Display()
 {
 	// initial timer
+	int ms = glutGet(GLUT_ELAPSED_TIME);
+	ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
+	float i_time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
 	if (DebugOn != 0)
 		fprintf(stderr, "Starting Display.\n");
 
@@ -969,6 +972,10 @@ void Display()
 
 	// swap the double-buffered framebuffers:
 	// take time
+	ms = glutGet(GLUT_ELAPSED_TIME);
+	ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
+	float f_time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
+	fprintf(stderr, "Simulation Time: %f\n", f_time - i_time);
 
 	glutSwapBuffers();
 
