@@ -222,7 +222,7 @@ float rest_density = 3.;	   // Rest Density
 int ActiveButton;	 // current button that is down
 GLuint AxesList;	 // list to hold the axes
 int AxesOn;			 // != 0 means to draw the axes
-GLuint BoxList;		 // object display list
+GLuint ParticleList;		 // object display list
 int DebugOn;		 // != 0 means to print debugging info
 int DepthCueOn;		 // != 0 means to use intensity depth cueing
 int DepthBufferOn;	 // != 0 means to use the z-buffer
@@ -901,7 +901,7 @@ void Display()
 
 	SetPointLight(GL_LIGHT0, -5., 5., 5., 1., 1., 1.);
 
-	// glCallList(BoxList);
+	// glCallList(ParticleList);
 	// glPointSize(p_size);
 	// glVertexPointer( 3, GL_FLOAT, sizeof(Particle), &particles[0].pos );
 	// glEnableClientState( GL_VERTEX_ARRAY );
@@ -917,7 +917,7 @@ void Display()
 		glPushMatrix();
 		// SetMaterial(particle.r, particle.g, particle.b, 10.);
 		glTranslatef(particle.pos.x, particle.pos.y, particle.pos.z); // Translate to the position of the particle
-		OsuSphere(p_size, 10, 10);									  // Call your sphere drawing function  // put in display list
+		glCallList(ParticleList);									  // Call your sphere drawing function
 		glPopMatrix();
 	}
 
@@ -934,7 +934,7 @@ void Display()
 	{
 		glPushMatrix();
 		glRotatef(90.f, 0.f, 1.f, 0.f);
-		glCallList(BoxList);
+		glCallList(ParticleList);
 		glPopMatrix();
 	}
 #endif
@@ -1276,54 +1276,10 @@ void InitLists()
 
 	// create the object:
 
-	BoxList = glGenLists(1);
-	glNewList(BoxList, GL_COMPILE);
+	ParticleList = glGenLists(1);
+	glNewList(ParticleList, GL_COMPILE);
 
-	glBegin(GL_QUADS);
-
-	glColor3f(1., 0., 0.);
-
-	glNormal3f(1., 0., 0.);
-	glVertex3f(dx, -dy, dz);
-	glVertex3f(dx, -dy, -dz);
-	glVertex3f(dx, dy, -dz);
-	glVertex3f(dx, dy, dz);
-
-	glNormal3f(-1., 0., 0.);
-	glVertex3f(-dx, -dy, dz);
-	glVertex3f(-dx, dy, dz);
-	glVertex3f(-dx, dy, -dz);
-	glVertex3f(-dx, -dy, -dz);
-
-	glColor3f(0., 1., 0.);
-
-	glNormal3f(0., 1., 0.);
-	glVertex3f(-dx, dy, dz);
-	glVertex3f(dx, dy, dz);
-	glVertex3f(dx, dy, -dz);
-	glVertex3f(-dx, dy, -dz);
-
-	glNormal3f(0., -1., 0.);
-	glVertex3f(-dx, -dy, dz);
-	glVertex3f(-dx, -dy, -dz);
-	glVertex3f(dx, -dy, -dz);
-	glVertex3f(dx, -dy, dz);
-
-	glColor3f(0., 0., 1.);
-
-	glNormal3f(0., 0., 1.);
-	glVertex3f(-dx, -dy, dz);
-	glVertex3f(dx, -dy, dz);
-	glVertex3f(dx, dy, dz);
-	glVertex3f(-dx, dy, dz);
-
-	glNormal3f(0., 0., -1.);
-	glVertex3f(-dx, -dy, -dz);
-	glVertex3f(-dx, dy, -dz);
-	glVertex3f(dx, dy, -dz);
-	glVertex3f(dx, -dy, -dz);
-
-	glEnd();
+	OsuSphere(p_size, 10, 10);
 
 	glEndList();
 
