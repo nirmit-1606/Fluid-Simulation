@@ -61,10 +61,6 @@ const int ESCAPE = 0x1b;
 
 const int INIT_WINDOW_SIZE = 600;
 
-// size of the 3d box to be drawn:
-
-const float BOXSIZE = 2.f;
-
 // multiplication factors for input interaction:
 //  (these are known from previous experience)
 
@@ -207,7 +203,7 @@ const float k = spacing / 1000.0f; // Far pressure weight
 const float k_near = k * 10.;	   // Near pressure weight
 const float r = spacing * 1.25f;   // Radius of Support
 const float rsq = r * r;		   // ... squared for performance stuff
-const float SIM_W = 1.5;		   // The size of the world
+const float SIM_W = 1.;		   // The size of the world
 const float bottom = 0;			   // The floor of the world
 const float i_girth = 2.f;		   // initial parameters
 
@@ -365,18 +361,14 @@ public:
 	SpatialIndex(
 		const unsigned int numBuckets, // number of hash buckets
 		const float cellSize		   // grid cell size
-		// const bool twoDeeNeighborhood  // true == 3x3 neighborhood, false == 3x3x3
 		)
 		: mHashMap(numBuckets), mInvCellSize(1.0f / cellSize)
 	{
 		// initialize neighbor offsets
 		for (int i = -1; i <= 1; i++)
 			for (int j = -1; j <= 1; j++)
-				// if (twoDeeNeighborhood)
-				// 	mOffsets.push_back(glm::ivec3(i, j, 0));
-				// else
-					for (int k = -1; k <= 1; k++)
-						mOffsets.push_back(glm::ivec3(i, j, k));
+				for (int k = -1; k <= 1; k++)
+					mOffsets.push_back(glm::ivec3(i, j, k));
 	}
 
 	void Insert(const glm::vec3 &pos, T *thing)
@@ -431,63 +423,6 @@ private:
 
 	const float mInvCellSize;
 };
-
-// template<typename T>
-// class SpatialIndex {
-// public:
-//     typedef std::vector<T*> NeighborList;
-
-//     SpatialIndex(const unsigned int numBuckets, const float cellSize)
-//         : mHashMap(numBuckets), mInvCellSize(1.0f / cellSize) {}
-
-//     void Insert(const glm::vec3& pos, T* thing) {
-//         mHashMap[Discretize(pos, mInvCellSize)].push_back(thing);
-//     }
-
-//     void Neighbors(const glm::vec3& pos, NeighborList& ret) const {
-//         const glm::ivec3 ipos = Discretize(pos, mInvCellSize);
-//         for (const auto& offset : mOffsets) {
-//             typename HashMap::const_iterator it = mHashMap.find(offset + ipos);
-//             if (it != mHashMap.end()) {
-//                 ret.insert(ret.end(), it->second.begin(), it->second.end());
-//             }
-//         }
-//     }
-
-//     void Clear() {
-//         mHashMap.clear();
-//     }
-
-// private:
-//     struct TeschnerHash : std::unary_function<glm::ivec3, std::size_t> {
-//         std::size_t operator()(glm::ivec3 const& pos) const {
-//             const unsigned int p1 = 73856093;
-//             const unsigned int p2 = 19349663;
-//             const unsigned int p3 = 83492791;
-//             return size_t((pos.x * p1) ^ (pos.y * p2) ^ (pos.z * p3));
-//         };
-//     };
-
-//     static inline glm::ivec3 Discretize(const glm::vec3& pos, const float invCellSize) {
-//         return glm::ivec3(glm::floor(pos * invCellSize));
-//     }
-
-//     typedef std::unordered_map<glm::ivec3, NeighborList, TeschnerHash> HashMap;
-//     HashMap mHashMap;
-
-//     const float mInvCellSize;
-//     std::vector<glm::ivec3> mOffsets {
-//         {-1, -1, -1}, {-1, -1, 0}, {-1, -1, 1},
-//         {-1, 0, -1}, {-1, 0, 0}, {-1, 0, 1},
-//         {-1, 1, -1}, {-1, 1, 0}, {-1, 1, 1},
-//         {0, -1, -1}, {0, -1, 0}, {0, -1, 1},
-//         {0, 0, -1}, {0, 0, 0}, {0, 0, 1},
-//         {0, 1, -1}, {0, 1, 0}, {0, 1, 1},
-//         {1, -1, -1}, {1, -1, 0}, {1, -1, 1},
-//         {1, 0, -1}, {1, 0, 0}, {1, 0, 1},
-//         {1, 1, -1}, {1, 1, 0}, {1, 1, 1}
-//     };
-// };
 
 typedef SpatialIndex<Particle> IndexType;
 IndexType indexsp(4093, r*2);
@@ -1313,18 +1248,13 @@ void InitLists()
 	if (DebugOn != 0)
 		fprintf(stderr, "Starting InitLists.\n");
 
-	float dx = BOXSIZE / 2.f;
-	float dy = BOXSIZE / 2.f;
-	float dz = BOXSIZE / 2.f;
 	glutSetWindow(MainWindow);
 
 	// create the object:
 
 	ParticleList = glGenLists(1);
 	glNewList(ParticleList, GL_COMPILE);
-
-	OsuSphere(p_size, 10, 10);
-
+		OsuSphere(p_size, 10, 10);
 	glEndList();
 
 	// create the axes:
