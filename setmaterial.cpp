@@ -13,3 +13,15 @@ SetMaterial( float r, float g, float b,  float shininess )
 	glMaterialfv( GL_FRONT, GL_SPECULAR, MulArray3( .8f, (float *)WHITE ) );
 	glMaterialf ( GL_FRONT, GL_SHININESS, shininess );
 }
+
+void
+SetMaterial( float r, float g, float b, float a,  float shininess )
+{
+	glMaterialfv( GL_BACK, GL_SPECULAR, Array3( 0., 0., 0. ) );
+	glMaterialfv( GL_FRONT, GL_SPECULAR, MulArray3( .8f, (float *)WHITE ) );
+
+	glMaterialfv( GL_FRONT_AND_BACK, GL_EMISSION, Array3( 0., 0., 0. ) );
+	glMaterialfv( GL_FRONT_AND_BACK, GL_AMBIENT, Array4( r, g, b, a ) );
+	glMaterialfv( GL_FRONT_AND_BACK, GL_DIFFUSE, Array4( r, g, b, a ) );
+	glMaterialf ( GL_FRONT_AND_BACK, GL_SHININESS, shininess );
+}
