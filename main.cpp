@@ -211,7 +211,7 @@ const float SIM_W = 1.5;		   // The size of the world
 const float bottom = 0;			   // The floor of the world
 const float i_girth = 2.f;		   // initial parameters
 
-int N = 200;
+int N = 100;
 float rest_density = 3.;	   // Rest Density
 
 // #define DEMO_Z_FIGHTING
@@ -235,6 +235,7 @@ int ShadowsOn;		 // != 0 means to turn shadows on
 float Time;			 // used for animation, this has a value between 0. and 1.
 int Xmouse, Ymouse;	 // mouse values
 float Xrot, Yrot;	 // rotation angles in degrees
+int displayCnt;
 
 bool doSimulation;
 bool useGravity;
@@ -286,6 +287,18 @@ Array3(float a, float b, float c)
 	array[1] = b;
 	array[2] = c;
 	array[3] = 1.;
+	return array;
+}
+
+float *
+Array4(float a, float b, float c, float d)
+{
+	static float array[4];
+
+	array[0] = a;
+	array[1] = b;
+	array[2] = c;
+	array[3] = d;
 	return array;
 }
 
@@ -755,13 +768,13 @@ int main(int argc, char *argv[])
 
 	InitLists();
 
-	// Initialize initial number of particles
-	initParticles(N);
-
 	// init all the global variables used by Display( ):
 	// this will also post a redisplay
 
 	Reset();
+
+	// Initialize initial number of particles
+	initParticles(N);
 
 	// setup all the user interface stuff:
 
@@ -790,9 +803,9 @@ void Animate()
 {
 	// put animation stuff in here -- change some global variables for Display( ) to find:
 
-	int ms = glutGet(GLUT_ELAPSED_TIME);
-	ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
-	Time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
+	// int ms = glutGet(GLUT_ELAPSED_TIME);
+	// ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
+	// Time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
 	// fprintf(stderr, "%f\n", Time);
 
 	// for example, if you wanted to spin an object in Display( ), you might call: glRotatef( 360.f*Time,   0., 1., 0. );
@@ -805,12 +818,18 @@ void Animate()
 
 // draw the complete scene:
 
+int ms;
+float i_time, f_time, fpsSum;
+
 void Display()
 {
 	// initial timer
-	int ms = glutGet(GLUT_ELAPSED_TIME);
-	ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
-	float i_time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
+	if(displayCnt < 50){
+		ms = glutGet(GLUT_ELAPSED_TIME);
+		ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
+		i_time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
+	}
+	
 	if (DebugOn != 0)
 		fprintf(stderr, "Starting Display.\n");
 
@@ -913,8 +932,11 @@ void Display()
 
 	// Iterate through your particles and draw spheres at their positions
 	// glColor3f(.2, .2, .9);
+	// glEnable(GL_BLEND);
+	// glDepthMask(GL_FALSE);
+	// glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	
-	SetMaterial(.2, .2, .8, 10.);
+	SetMaterial(.3, .8, .3, 10.);
 	for (const auto &particle : particles)
 	{
 		glPushMatrix();
@@ -923,6 +945,9 @@ void Display()
 		glCallList(ParticleList);									  // Call your sphere drawing function
 		glPopMatrix();
 	}
+
+	// glDepthMask( GL_TRUE );
+	// glDisable( GL_BLEND );
 
 	if (doSimulation)
 	{
@@ -972,10 +997,22 @@ void Display()
 
 	// swap the double-buffered framebuffers:
 	// take time
-	ms = glutGet(GLUT_ELAPSED_TIME);
-	ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
-	float f_time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
-	fprintf(stderr, "Simulation Time: %f\n", f_time - i_time);
+	
+	if(displayCnt < 50){
+		ms = glutGet(GLUT_ELAPSED_TIME);
+		ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
+		f_time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
+		float dTime = f_time - i_time;
+		float fps = 1.f / dTime;
+		fpsSum += fps;
+		// fprintf(stderr, "Δ Time: %f\tfps: %8.2f\n", dTime, fps);
+		// fprintf(stderr, "%8.2f\n", fps);
+		displayCnt++;
+	}
+	else if(displayCnt == 50){
+		fprintf(stderr, "Average fps: %8.2f\n", fpsSum/50.f);
+		displayCnt++;
+	}
 
 	glutSwapBuffers();
 
@@ -1378,6 +1415,102 @@ void Keyboard(unsigned char c, int x, int y)
 	case '0':
 		rest_density = 10.;
 		break;
+	
+	case 'a':
+		particles.clear();
+		initParticles(200);
+		fprintf(stderr, "200 particles: ");
+		displayCnt = 0;
+		fpsSum = 0;
+		break;
+	
+	case 'b':
+		particles.clear();
+		initParticles(300);
+		fprintf(stderr, "300 particles: ");
+		displayCnt = 0;
+		fpsSum = 0;
+		break;
+	
+	case 'c':
+		particles.clear();
+		initParticles(400);
+		fprintf(stderr, "400 particles: ");
+		displayCnt = 0;
+		fpsSum = 0;
+		break;
+
+	case 'd':
+		particles.clear();
+		initParticles(500);
+		fprintf(stderr, "500 particles: ");
+		displayCnt = 0;
+		fpsSum = 0;
+		break;
+	
+	case 'e':
+		particles.clear();
+		initParticles(600);
+		fprintf(stderr, "600 particles: ");
+		displayCnt = 0;
+		fpsSum = 0;
+		break;
+	
+	case 'f':
+		particles.clear();
+		initParticles(700);
+		fprintf(stderr, "700 particles: ");
+		displayCnt = 0;
+		fpsSum = 0;
+		break;
+	
+	case 'A':
+		particles.clear();
+		initParticles(800);
+		fprintf(stderr, "800 particles: ");
+		displayCnt = 0;
+		fpsSum = 0;
+		break;
+	
+	case 'B':
+		particles.clear();
+		initParticles(900);
+		fprintf(stderr, "900 particles: ");
+		displayCnt = 0;
+		fpsSum = 0;
+		break;
+	
+	case 'C':
+		particles.clear();
+		initParticles(1000);
+		fprintf(stderr, "1000 particles: ");
+		displayCnt = 0;
+		fpsSum = 0;
+		break;
+
+	case 'D':
+		particles.clear();
+		initParticles(1100);
+		fprintf(stderr, "1100 particles: ");
+		displayCnt = 0;
+		fpsSum = 0;
+		break;
+	
+	case 'E':
+		particles.clear();
+		initParticles(1200);
+		fprintf(stderr, "1200 particles: ");
+		displayCnt = 0;
+		fpsSum = 0;
+		break;
+	
+	case 'F':
+		particles.clear();
+		initParticles(1300);
+		fprintf(stderr, "1300 particles: ");
+		displayCnt = 0;
+		fpsSum = 0;
+		break;
 
 	default:
 		fprintf(stderr, "Don't know what to do with keyboard hit: '%c' (0x%0x)\n", c, c);
@@ -1497,10 +1630,11 @@ void Reset()
 	NowColor = YELLOW;
 	NowProjection = PERSP;
 	Xrot = Yrot = 0.;
-
+	
+	displayCnt = 0;
 	particles.clear();
 	initParticles(N);
-	doSimulation = false;
+	doSimulation = true;
 	useGravity = true;
 }
 
