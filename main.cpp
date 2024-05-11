@@ -235,6 +235,7 @@ int displayCnt;
 
 bool doSimulation;
 bool useGravity;
+bool externalForce;
 
 // function prototypes:
 
@@ -535,20 +536,25 @@ void step()
 		// Make a little spring force to push it back in.
 		if (useGravity)
 		{
-			if (particles[i].pos.x < -SIM_W)
-				particles[i].force.x -= (particles[i].pos.x - -SIM_W) / 8;
-			if (particles[i].pos.x > SIM_W)
-				particles[i].force.x -= (particles[i].pos.x - SIM_W) / 8;
+			if (particles[i].pos.x < -SIM_W * 3)
+				particles[i].force.x -= (particles[i].pos.x - -SIM_W * 3) / 8;
+			if (particles[i].pos.x > SIM_W * 3)
+				particles[i].force.x -= (particles[i].pos.x - SIM_W * 3) / 8;
 
-			if (particles[i].pos.z < -SIM_W)
-				particles[i].force.z -= (particles[i].pos.z - -SIM_W) / 8;
-			if (particles[i].pos.z > SIM_W)
-				particles[i].force.z -= (particles[i].pos.z - SIM_W) / 8;
+			if (particles[i].pos.z < -SIM_W/2)
+				particles[i].force.z -= (particles[i].pos.z - -SIM_W/2) / 8;
+			if (particles[i].pos.z > SIM_W/2)
+				particles[i].force.z -= (particles[i].pos.z - SIM_W/2) / 8;
 
 			if (particles[i].pos.y < bottom)
 				particles[i].force.y -= (particles[i].pos.y - bottom) / 8;
 			if (particles[i].pos.y > bottom+10)
 				particles[i].force.y -= (particles[i].pos.y - (bottom+10)) / 8;
+		}
+
+		if (externalForce)
+		{
+			particles[i].force += glm::vec3(.002f * 0.025, 0.f, 0.f);
 		}
 
 		// Reset the nessecary items.
@@ -577,7 +583,7 @@ void step()
 		float dn = 0;
 
 		IndexType::NeighborList neigh;
-		neigh.reserve(64);
+		neigh.reserve(16);		// 64 original
 		indexsp.Neighbors(glm::vec3(particles[i].pos), neigh);
 		for (int j = 0; j < (int)neigh.size(); ++j)
 		{
@@ -759,11 +765,11 @@ float i_time, f_time, fpsSum;
 void Display()
 {
 	// initial timer
-	if(displayCnt < 50){
-		ms = glutGet(GLUT_ELAPSED_TIME);
-		ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
-		i_time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
-	}
+	// if(displayCnt < 50){
+	// 	ms = glutGet(GLUT_ELAPSED_TIME);
+	// 	ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
+	// 	i_time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
+	// }
 	
 	if (DebugOn != 0)
 		fprintf(stderr, "Starting Display.\n");
@@ -933,21 +939,21 @@ void Display()
 	// swap the double-buffered framebuffers:
 	// take time
 	
-	if(displayCnt < 50){
-		ms = glutGet(GLUT_ELAPSED_TIME);
-		ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
-		f_time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
-		float dTime = f_time - i_time;
-		float fps = 1.f / dTime;
-		fpsSum += fps;
-		// fprintf(stderr, "Δ Time: %f\tfps: %8.2f\n", dTime, fps);
-		// fprintf(stderr, "%8.2f\n", fps);
-		displayCnt++;
-	}
-	else if(displayCnt == 50){
-		fprintf(stderr, "Average fps: %8.2f\n", fpsSum/50.f);
-		displayCnt++;
-	}
+	// if(displayCnt < 50){
+	// 	ms = glutGet(GLUT_ELAPSED_TIME);
+	// 	ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
+	// 	f_time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
+	// 	float dTime = f_time - i_time;
+	// 	float fps = 1.f / dTime;
+	// 	fpsSum += fps;
+	// 	// fprintf(stderr, "Δ Time: %f\tfps: %8.2f\n", dTime, fps);
+	// 	// fprintf(stderr, "%8.2f\n", fps);
+	// 	displayCnt++;
+	// }
+	// else if(displayCnt == 50){
+	// 	fprintf(stderr, "Average fps: %8.2f\n", fpsSum/50.f);
+	// 	displayCnt++;
+	// }
 
 	glutSwapBuffers();
 
@@ -1346,100 +1352,17 @@ void Keyboard(unsigned char c, int x, int y)
 		rest_density = 10.;
 		break;
 	
+	// used for gathering graph data
 	case 'a':
 		particles.clear();
-		initParticles(200);
-		fprintf(stderr, "200 particles: ");
-		displayCnt = 0;
-		fpsSum = 0;
-		break;
-	
-	case 'b':
-		particles.clear();
-		initParticles(300);
-		fprintf(stderr, "300 particles: ");
-		displayCnt = 0;
-		fpsSum = 0;
-		break;
-	
-	case 'c':
-		particles.clear();
-		initParticles(400);
-		fprintf(stderr, "400 particles: ");
-		displayCnt = 0;
-		fpsSum = 0;
-		break;
-
-	case 'd':
-		particles.clear();
-		initParticles(500);
-		fprintf(stderr, "500 particles: ");
-		displayCnt = 0;
-		fpsSum = 0;
-		break;
-	
-	case 'e':
-		particles.clear();
 		initParticles(600);
-		fprintf(stderr, "600 particles: ");
-		displayCnt = 0;
-		fpsSum = 0;
-		break;
-	
-	case 'f':
-		particles.clear();
-		initParticles(700);
-		fprintf(stderr, "700 particles: ");
-		displayCnt = 0;
-		fpsSum = 0;
-		break;
-	
-	case 'A':
-		particles.clear();
-		initParticles(800);
-		fprintf(stderr, "800 particles: ");
-		displayCnt = 0;
-		fpsSum = 0;
-		break;
-	
-	case 'B':
-		particles.clear();
-		initParticles(900);
-		fprintf(stderr, "900 particles: ");
-		displayCnt = 0;
-		fpsSum = 0;
-		break;
-	
-	case 'C':
-		particles.clear();
-		initParticles(1000);
-		fprintf(stderr, "1000 particles: ");
+		// fprintf(stderr, "200 particles: ");
 		displayCnt = 0;
 		fpsSum = 0;
 		break;
 
-	case 'D':
-		particles.clear();
-		initParticles(1100);
-		fprintf(stderr, "1100 particles: ");
-		displayCnt = 0;
-		fpsSum = 0;
-		break;
-	
-	case 'E':
-		particles.clear();
-		initParticles(1200);
-		fprintf(stderr, "1200 particles: ");
-		displayCnt = 0;
-		fpsSum = 0;
-		break;
-	
-	case 'F':
-		particles.clear();
-		initParticles(1300);
-		fprintf(stderr, "1300 particles: ");
-		displayCnt = 0;
-		fpsSum = 0;
+	case 'e':
+		externalForce = !externalForce;
 		break;
 
 	default:
@@ -1566,6 +1489,7 @@ void Reset()
 	initParticles(N);
 	doSimulation = true;
 	useGravity = true;
+	externalForce = false;
 }
 
 // called when user resizes the window:
