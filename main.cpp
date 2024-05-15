@@ -235,6 +235,7 @@ int displayCnt;
 
 bool doSimulation;
 bool useGravity;
+bool useColorVisual;
 bool externalForce;
 
 // function prototypes:
@@ -658,15 +659,16 @@ void step()
 	}
 
 	// Viscosity
+	// fprintf(stderr, "rho: %3.5f\n", 80000.f * fabs(glm::dot(particles[0].vel.x, particles[0].vel.z)));
 	for (int i = 0; i < (int)particles.size(); ++i)
 	{
 		// We'll let the color be determined by
 		// ... x-velocity for the red component
 		// ... y-velocity for the green-component
 		// ... pressure for the blue component
-		particles[i].r = 0.3f + (20 * fabs(glm::dot(particles[i].vel.x, particles[i].vel.z)) );
-		particles[i].g = 0.3f + (20 * fabs(particles[i].vel.y) );
-		particles[i].b = 0.3f + (.1f * particles[i].rho );
+		particles[i].r = 0.3f + (80000.f * fabs(glm::dot(particles[i].vel.x, particles[i].vel.z)) );
+		particles[i].g = 0.3f + (60.f * fabs(particles[i].vel.y) );
+		particles[i].b = 0.3f + (.6f * particles[i].rho );
 
 		// For each of that particles neighbors
 		for (const Neighbor &n : particles[i].neighbors)
@@ -877,11 +879,17 @@ void Display()
 	// glDepthMask(GL_FALSE);
 	// glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	
-	SetMaterial(.2, .9, 1., 10.);
 	for (const auto &particle : particles)
 	{
+		if (useColorVisual)
+		{
+			SetMaterial(particle.r, particle.g, particle.b, 10.);
+		}
+		else
+		{
+			SetMaterial(.2, .9, 1., 10.);
+		}
 		glPushMatrix();
-		// SetMaterial(particle.r, particle.g, particle.b, 10.);
 		glTranslatef(particle.pos.x, particle.pos.y, particle.pos.z); // Translate to the position of the particle
 		glCallList(ParticleList);									  // Call your sphere drawing function
 		glPopMatrix();
@@ -1359,6 +1367,10 @@ void Keyboard(unsigned char c, int x, int y)
 		// fprintf(stderr, "200 particles: ");
 		displayCnt = 0;
 		fpsSum = 0;
+		break;
+	
+	case 'c':
+		useColorVisual = !useColorVisual;
 		break;
 
 	case 'e':
