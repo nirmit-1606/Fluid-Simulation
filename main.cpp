@@ -877,7 +877,7 @@ void Display()
 	// glDepthMask(GL_FALSE);
 	// glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	
-	SetMaterial(.3, .8, .3, 10.);
+	SetMaterial(.2, .9, 1., 10.);
 	for (const auto &particle : particles)
 	{
 		glPushMatrix();
