@@ -207,7 +207,7 @@ const float SIM_W = 1.;		   // The size of the world
 const float bottom = 0;			   // The floor of the world
 const float i_girth = 2.f;		   // initial parameters
 
-int N = 100;
+int N = 200;
 float rest_density = 3.;	   // Rest Density
 
 // #define DEMO_Z_FIGHTING
@@ -237,6 +237,7 @@ bool doSimulation;
 bool useGravity;
 bool useColorVisual;
 bool externalForce;
+bool shrinkWorld;
 
 // function prototypes:
 
@@ -537,15 +538,24 @@ void step()
 		// Make a little spring force to push it back in.
 		if (useGravity)
 		{
-			if (particles[i].pos.x < -SIM_W * 3)
-				particles[i].force.x -= (particles[i].pos.x - -SIM_W * 3) / 8;
-			if (particles[i].pos.x > SIM_W * 3)
-				particles[i].force.x -= (particles[i].pos.x - SIM_W * 3) / 8;
+			float bound;
+			if(shrinkWorld)
+			{
+				bound = SIM_W;
+			}
+			else
+			{
+				bound = SIM_W * 3.f;
+			}
+			if (particles[i].pos.x < -bound)
+				particles[i].force.x -= (particles[i].pos.x - -bound) / 8;
+			if (particles[i].pos.x > bound)
+				particles[i].force.x -= (particles[i].pos.x - bound) / 8;
 
-			if (particles[i].pos.z < -SIM_W/2)
-				particles[i].force.z -= (particles[i].pos.z - -SIM_W/2) / 8;
-			if (particles[i].pos.z > SIM_W/2)
-				particles[i].force.z -= (particles[i].pos.z - SIM_W/2) / 8;
+			if (particles[i].pos.z < -SIM_W)
+				particles[i].force.z -= (particles[i].pos.z - -SIM_W) / 8;
+			if (particles[i].pos.z > SIM_W)
+				particles[i].force.z -= (particles[i].pos.z - SIM_W) / 8;
 
 			if (particles[i].pos.y < bottom)
 				particles[i].force.y -= (particles[i].pos.y - bottom) / 8;
@@ -780,7 +790,8 @@ void Display()
 	glutSetWindow(MainWindow);
 
 	// erase the background:
-	glDrawBuffer(GL_BACK);
+	// glDrawBuffer(GL_BACK);
+	glClearColor(.19f, .28f, .28f, 1.f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glEnable(GL_DEPTH_TEST);
@@ -1377,6 +1388,10 @@ void Keyboard(unsigned char c, int x, int y)
 		externalForce = !externalForce;
 		break;
 
+	case 'r':
+		shrinkWorld = !shrinkWorld;
+		break;
+
 	default:
 		fprintf(stderr, "Don't know what to do with keyboard hit: '%c' (0x%0x)\n", c, c);
 	}
@@ -1499,9 +1514,11 @@ void Reset()
 	displayCnt = 0;
 	particles.clear();
 	initParticles(N);
-	doSimulation = true;
+	doSimulation = false;
 	useGravity = true;
+	useColorVisual = false;
 	externalForce = false;
+	shrinkWorld = true;
 }
 
 // called when user resizes the window:
