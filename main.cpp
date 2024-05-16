@@ -221,7 +221,9 @@ float rest_density = 3.;	   // Rest Density
 int ActiveButton;	 // current button that is down
 GLuint AxesList;	 // list to hold the axes
 int AxesOn;			 // != 0 means to draw the axes
-GLuint ParticleList;		 // object display list
+GLuint ParticleList; // object display list
+GLuint GridDL1;		 // object display list
+GLuint GridDL2;		 // object display list
 int DebugOn;		 // != 0 means to print debugging info
 int DepthCueOn;		 // != 0 means to use intensity depth cueing
 int DepthBufferOn;	 // != 0 means to use the z-buffer
@@ -909,13 +911,20 @@ void Display()
 		glPopMatrix();
 	}
 
+	if(useGravity)
+	{
+		if (shrinkWorld)
+			glCallList(GridDL1);
+		else
+			glCallList(GridDL2);
+	}
+	
+
 	// glDepthMask( GL_TRUE );
 	// glDisable( GL_BLEND );
 
 	if (doSimulation)
-	{
 		step();
-	}
 
 	glDisable(GL_LIGHT0);
 	glDisable(GL_LIGHTING);
@@ -956,6 +965,7 @@ void Display()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glColor3f(1.f, 1.f, 1.f);
+	// string to be displayed on screen
 	std::string textToDisplay1 = std::to_string(particles.size()) + " Particles";
 	std::string textToDisplay2 = "Rest density: " + std::to_string((int)rest_density);
 	char *textCharArray1 = &textToDisplay1[0u];
@@ -1289,6 +1299,70 @@ void InitLists()
 	glNewList(ParticleList, GL_COMPILE);
 		OsuSphere(p_size, 10, 10);
 	glEndList();
+
+#define YGRID	-0.07f
+
+#define XSIDE1	SIM_W*2			// length of the x side of the grid
+#define X01      (-XSIDE1/2.)		// where one side starts
+#define NX1	50			// how many points in x
+#define DX1	( XSIDE1/(float)NX1 )	// change in x between the points
+
+#define ZSIDE1	SIM_W*2			// length of the z side of the grid
+#define Z01      (-ZSIDE1/2.)		// where one side starts
+#define NZ1	50			// how many points in z
+#define DZ1	( ZSIDE1/(float)NZ1 )	// change in z between the points
+
+	// int NZ = 100, NX = 100;
+	// float xside = SIM_W*5, zside = SIM_W*5;
+	// float X0 = xside/2.f, Z0 = zside/2.f;
+	// float DX = xside/(float)NX, DZ = zside/(float)NZ;
+	// float YGRID = 0.f;
+	GridDL1 = glGenLists( 1 );
+	glNewList( GridDL1, GL_COMPILE );
+		SetMaterial( 1.f, 1.f, .6f, 10.f );
+		glNormal3f( 0., 1., 0. );
+		for( int i = 0; i < NZ1; i++ )
+		{
+			glBegin( GL_QUAD_STRIP );
+			for( int j = 0; j < NX1; j++ )
+			{
+				glVertex3f( X01 + DX1*(float)j, YGRID, Z01 + DZ1*(float)(i+0) );
+				glVertex3f( X01 + DX1*(float)j, YGRID, Z01 + DZ1*(float)(i+1) );
+			}
+			glEnd( );
+		}
+	glEndList( );
+
+#define XSIDE2	SIM_W*6			// length of the x side of the grid
+#define X02      (-XSIDE2/2.)		// where one side starts
+#define NX2	150			// how many points in x
+#define DX2	( XSIDE2/(float)NX2 )	// change in x between the points
+
+#define ZSIDE2	SIM_W*2			// length of the z side of the grid
+#define Z02      (-ZSIDE2/2.)		// where one side starts
+#define NZ2	50			// how many points in z
+#define DZ2	( ZSIDE2/(float)NZ2 )	// change in z between the points
+
+	// int NZ = 100, NX = 100;
+	// float xside = SIM_W*5, zside = SIM_W*5;
+	// float X0 = xside/2.f, Z0 = zside/2.f;
+	// float DX = xside/(float)NX, DZ = zside/(float)NZ;
+	// float YGRID = 0.f;
+	GridDL2 = glGenLists( 1 );
+	glNewList( GridDL2, GL_COMPILE );
+		SetMaterial( 0.3f, .8f, 1.f, 10.f );
+		glNormal3f( 0., 1., 0. );
+		for( int i = 0; i < NZ2; i++ )
+		{
+			glBegin( GL_QUAD_STRIP );
+			for( int j = 0; j < NX2; j++ )
+			{
+				glVertex3f( X02 + DX2*(float)j, YGRID, Z02 + DZ2*(float)(i+0) );
+				glVertex3f( X02 + DX2*(float)j, YGRID, Z02 + DZ2*(float)(i+1) );
+			}
+			glEnd( );
+		}
+	glEndList( );
 
 	// create the axes:
 
