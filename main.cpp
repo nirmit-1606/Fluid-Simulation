@@ -3,6 +3,9 @@
 #include <ctype.h>
 #include <vector>
 #include <unordered_map>
+#include <string>
+#include <sstream>
+#include <iomanip> // for std::setprecision
 
 // #include <omp.h>
 
@@ -441,7 +444,7 @@ void initParticles(const unsigned int pN)
 		{
 			for (float z = -layer_W * cos((x)*F_PI / layer_W) / 2.; z <= layer_W * cos((x)*F_PI / layer_W) / 2.; z += r * 0.5f)
 			{
-				if (particles.size() > pN)
+				if (particles.size() >= pN)
 				{
 					break;
 				}
@@ -953,7 +956,12 @@ void Display()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glColor3f(1.f, 1.f, 1.f);
-	// DoRasterString( 5.f, 5.f, 0.f, (char *)"Text That Doesn't" );
+	std::string textToDisplay1 = std::to_string(particles.size()) + " Particles";
+	std::string textToDisplay2 = "Rest density: " + std::to_string((int)rest_density);
+	char *textCharArray1 = &textToDisplay1[0u];
+	char *textCharArray2 = &textToDisplay2[0u];
+	DoRasterString( 5.f, 7.f, 0.f, textCharArray1 );
+	DoRasterString( 5.f, 2.5f, 0.f, textCharArray2 );
 
 	// swap the double-buffered framebuffers:
 	// take time
