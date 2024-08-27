@@ -210,7 +210,7 @@ const float SIM_W = 1.;		   // The size of the world
 const float bottom = 0;			   // The floor of the world
 const float i_girth = 1.f;		   // initial parameters
 
-int N = 1500;
+int N = 2000;
 float rest_density = 3.;	   // Rest Density
 
 // #define DEMO_Z_FIGHTING
@@ -444,7 +444,7 @@ void initParticles(const unsigned int pN)
 	{
 		for (float x = -layer_W / 2.; x <= layer_W / 2.; x += r * 0.5f)
 		{
-			for (float z = -layer_W * cos((x)*F_PI / layer_W) / 2.; z <= layer_W * cos((x)*F_PI / layer_W) / 2.; z += r * 0.5f)
+			for (float z = -layer_W / 2.; z <= layer_W / 2.; z += r * 0.5f)
 			{
 				if (particles.size() >= pN)
 				{
@@ -469,17 +469,17 @@ void addParticleLayers(const unsigned int pL)
 	//float w = p_size;
 	int layer = 0;
 	float layer_W = i_girth * 0.4;
-	float startLayer = bottom + 3.;
+	float startLayer = bottom + 1.;
 	// if(add_new > 0. && Time - add_new < .1){
 	// 	startLayer += (Time - add_new)*100 + pL*r*0.5;
 	// }
 	// fprintf(stderr, "Time: %f \t LayerStart:%f\n", Time, startLayer);
 	// add_new = Time;
-	for (float y = startLayer; y <= 8.; y += r * 0.5f)
+	for (float y = startLayer; y <= 3.; y += r * 0.5f)
 	{
 		for (float x = -layer_W / 2.; x <= layer_W / 2.; x += r * 0.5f)
 		{
-			for (float z = -layer_W * cos((x)*F_PI / layer_W) / 2.; z <= layer_W * cos((x)*F_PI / layer_W) / 2.; z += r * 0.5f)
+			for (float z = -layer_W / 2.; z <= layer_W / 2.; z += r * 0.5f)
 			{
 				// if (particles.size() > pN)
 				// {
@@ -495,11 +495,11 @@ void addParticleLayers(const unsigned int pL)
 				particles.push_back(p);
 			}
 		}
-		layer++;
-		if (layer >= pL)
-		{
-			break;
-		}
+		// layer++;
+		// if (layer >= pL)
+		// {
+		// 	break;
+		// }
 	}
 }
 
@@ -914,7 +914,7 @@ void Display()
 
 	if(useGravity)
 	{
-		glColor3f(.8, .8, .9);
+		glColor3f(.1, .2, .3);
 		if (shrinkWorld)
 			glCallList(GridDL1);
 		else
