@@ -199,18 +199,18 @@ std::vector<Particle> particles;
 
 // --------------------------------------------------------------------
 // Some constants for the relevant simulation.
-const float p_size = .07;		   // particle size
+const float p_size = 3.5;		   // particle size
 const float G = .001f * .25;		   // Gravitational Constant for our simulation
-const float spacing = .22f;		   // Spacing of particles
+const float spacing = .1f;		   // Spacing of particles
 const float k = spacing / 1000.0f; // Far pressure weight
 const float k_near = k * 10.;	   // Near pressure weight
 const float r = spacing * 1.25f;   // Radius of Support
 const float rsq = r * r;		   // ... squared for performance stuff
 const float SIM_W = 1.;		   // The size of the world
 const float bottom = 0;			   // The floor of the world
-const float i_girth = 2.f;		   // initial parameters
+const float i_girth = 1.f;		   // initial parameters
 
-int N = 200;
+int N = 1500;
 float rest_density = 3.;	   // Rest Density
 
 // #define DEMO_Z_FIGHTING
@@ -438,8 +438,8 @@ IndexType indexsp(4093, r*2);
 // --------------------------------------------------------------------
 void initParticles(const unsigned int pN)
 {
-	float w = p_size;
-	float layer_W = i_girth / 2.;
+	//float w = p_size;
+	float layer_W = i_girth * 0.4;
 	for (float y = bottom + 0.1; y <= 5.; y += r * 0.5f)
 	{
 		for (float x = -layer_W / 2.; x <= layer_W / 2.; x += r * 0.5f)
@@ -466,10 +466,10 @@ void initParticles(const unsigned int pN)
 // float add_new = 0;
 void addParticleLayers(const unsigned int pL)
 {
-	float w = p_size;
+	//float w = p_size;
 	int layer = 0;
 	float layer_W = i_girth * 0.4;
-	float startLayer = bottom + 5.5;
+	float startLayer = bottom + 3.;
 	// if(add_new > 0. && Time - add_new < .1){
 	// 	startLayer += (Time - add_new)*100 + pL*r*0.5;
 	// }
@@ -563,9 +563,9 @@ void step()
 				particles[i].force.z -= (particles[i].pos.z - SIM_W) / 8;
 
 			if (particles[i].pos.y < bottom)
-				particles[i].force.y -= (particles[i].pos.y - bottom) / 8;
-			if (particles[i].pos.y > bottom+10)
-				particles[i].force.y -= (particles[i].pos.y - (bottom+10)) / 8;
+				particles[i].force.y -= (particles[i].pos.y) / 8;
+			// if (particles[i].pos.y > bottom+10)
+			// 	particles[i].force.y -= (particles[i].pos.y - (bottom+10)) / 8;
 		}
 
 		if (externalForce)
@@ -599,7 +599,7 @@ void step()
 		float dn = 0;
 
 		IndexType::NeighborList neigh;
-		neigh.reserve(16);		// 64 original
+		neigh.reserve(64);		// 64 original
 		indexsp.Neighbors(glm::vec3(particles[i].pos), neigh);
 		for (int j = 0; j < (int)neigh.size(); ++j)
 		{
@@ -878,16 +878,17 @@ void Display()
 	glEnable(GL_NORMALIZE);
 
 	// draw the box object by calling up its display list:
-	glEnable(GL_LIGHTING);
+	// glEnable(GL_LIGHTING);
 
-	SetPointLight(GL_LIGHT0, -5., 5., 5., 1., 1., 1.);
+	// SetPointLight(GL_LIGHT0, -5., 5., 5., 1., 1., 1.);
 
-	// glCallList(ParticleList);
-	// glPointSize(p_size);
-	// glVertexPointer( 3, GL_FLOAT, sizeof(Particle), &particles[0].pos );
-	// glEnableClientState( GL_VERTEX_ARRAY );
-	// glDrawArrays( GL_POINTS, 0, static_cast< GLsizei >( particles.size() ) );
-	// glDisableClientState( GL_VERTEX_ARRAY );
+	glPointSize(p_size);
+	// SetMaterial(.2, .9, 1., 10.);
+	glColor3f(.5, .6, .9);
+	glVertexPointer( 3, GL_FLOAT, sizeof(Particle), &particles[0].pos );
+	glEnableClientState( GL_VERTEX_ARRAY );
+	glDrawArrays( GL_POINTS, 0, static_cast< GLsizei >( particles.size() ) );
+	glDisableClientState( GL_VERTEX_ARRAY );
 
 	// Iterate through your particles and draw spheres at their positions
 	// glColor3f(.2, .2, .9);
@@ -895,7 +896,7 @@ void Display()
 	// glDepthMask(GL_FALSE);
 	// glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	
-	for (const auto &particle : particles)
+	/*for (const auto &particle : particles)
 	{
 		if (useColorVisual)
 		{
@@ -909,10 +910,11 @@ void Display()
 		glTranslatef(particle.pos.x, particle.pos.y, particle.pos.z); // Translate to the position of the particle
 		glCallList(ParticleList);									  // Call your sphere drawing function
 		glPopMatrix();
-	}
+	}*/
 
 	if(useGravity)
 	{
+		glColor3f(.8, .8, .9);
 		if (shrinkWorld)
 			glCallList(GridDL1);
 		else
@@ -926,8 +928,8 @@ void Display()
 	if (doSimulation)
 		step();
 
-	glDisable(GL_LIGHT0);
-	glDisable(GL_LIGHTING);
+	// glDisable(GL_LIGHT0);
+	// glDisable(GL_LIGHTING);
 
 #ifdef DEMO_Z_FIGHTING
 	if (DepthFightingOn != 0)
