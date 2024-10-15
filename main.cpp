@@ -884,11 +884,38 @@ void Display()
 
 	glPointSize(p_size);
 	// SetMaterial(.2, .9, 1., 10.);
-	glColor3f(.5, .6, .9);
-	glVertexPointer( 3, GL_FLOAT, sizeof(Particle), &particles[0].pos );
-	glEnableClientState( GL_VERTEX_ARRAY );
-	glDrawArrays( GL_POINTS, 0, static_cast< GLsizei >( particles.size() ) );
-	glDisableClientState( GL_VERTEX_ARRAY );
+
+	// Enable vertex arrays for positions
+	glVertexPointer(3, GL_FLOAT, sizeof(Particle), &particles[0].pos);
+	glEnableClientState(GL_VERTEX_ARRAY);
+
+	// Prepare and enable color arrays for particles
+	std::vector<float> particleColors;
+	particleColors.reserve(particles.size() * 3);  // r, g, b for each particle
+
+	for (const auto& particle : particles) {
+		particleColors.push_back(particle.r); // red component
+		particleColors.push_back(particle.g); // green component
+		particleColors.push_back(particle.b); // blue component
+	}
+
+	// glColor3f(.5, .6, .9);
+
+	// Use the color array
+	glColorPointer(3, GL_FLOAT, 0, particleColors.data());
+	glEnableClientState(GL_COLOR_ARRAY);
+
+	// Draw particles
+	glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(particles.size()));
+
+	// Disable arrays after drawing
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
+
+	// glVertexPointer( 3, GL_FLOAT, sizeof(Particle), &particles[0].pos );
+	// glEnableClientState( GL_VERTEX_ARRAY );
+	// glDrawArrays( GL_POINTS, 0, static_cast< GLsizei >( particles.size() ) );
+	// glDisableClientState( GL_VERTEX_ARRAY );
 
 	// Iterate through your particles and draw spheres at their positions
 	// glColor3f(.2, .2, .9);
