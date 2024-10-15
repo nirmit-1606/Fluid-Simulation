@@ -199,18 +199,18 @@ std::vector<Particle> particles;
 
 // --------------------------------------------------------------------
 // Some constants for the relevant simulation.
-const float p_size = 3.5;		   // particle size
+const float p_size = 2;		   // particle size
 const float G = .001f * .25;		   // Gravitational Constant for our simulation
-const float spacing = .1f;		   // Spacing of particles
+const float spacing = .07f;		   // Spacing of particles
 const float k = spacing / 1000.0f; // Far pressure weight
 const float k_near = k * 10.;	   // Near pressure weight
 const float r = spacing * 1.25f;   // Radius of Support
 const float rsq = r * r;		   // ... squared for performance stuff
-const float SIM_W = 1.;		   // The size of the world
+const float SIM_W = .;		   // The size of the world
 const float bottom = 0;			   // The floor of the world
 const float i_girth = 1.f;		   // initial parameters
 
-int N = 2000;
+int N = 1000;
 float rest_density = 3.;	   // Rest Density
 
 // #define DEMO_Z_FIGHTING
@@ -277,7 +277,7 @@ float Unit(float[3], float[3]);
 float Unit(float[3]);
 
 void initParticles(const unsigned int);
-void addParticleLayers(const unsigned int);
+void addMoreParticles(const unsigned int);
 void step();
 
 // utility to create an array from 3 separate values:
@@ -438,7 +438,7 @@ IndexType indexsp(4093, r*2);
 // --------------------------------------------------------------------
 void initParticles(const unsigned int pN)
 {
-	//float w = p_size;
+	// Add particles only if the current size is less than pN
 	float layer_W = i_girth * 0.4;
 	for (float y = bottom + 0.1; y <= 5.; y += r * 0.5f)
 	{
@@ -446,10 +446,11 @@ void initParticles(const unsigned int pN)
 		{
 			for (float z = -layer_W / 2.; z <= layer_W / 2.; z += r * 0.5f)
 			{
-				if (particles.size() >= pN)
-				{
-					break;
-				}
+				// Only add new particles up to the specified pN
+                if (particles.size() >= pN)
+                {
+                    break;
+                }
 
 				Particle p;
 				p.pos = glm::vec3(x, y, z);
@@ -463,43 +464,34 @@ void initParticles(const unsigned int pN)
 	}
 }
 
-// float add_new = 0;
-void addParticleLayers(const unsigned int pL)
+void addMoreParticles(const unsigned int nP)
 {
-	//float w = p_size;
-	int layer = 0;
+	// Number of particles already in the system
+    unsigned int currentParticleCount = particles.size();
+
+	// Add particles only if the current size is less than pN
 	float layer_W = i_girth * 0.4;
-	float startLayer = bottom + 1.;
-	// if(add_new > 0. && Time - add_new < .1){
-	// 	startLayer += (Time - add_new)*100 + pL*r*0.5;
-	// }
-	// fprintf(stderr, "Time: %f \t LayerStart:%f\n", Time, startLayer);
-	// add_new = Time;
-	for (float y = startLayer; y <= 3.; y += r * 0.5f)
+	for (float y = bottom + 2.; y <= 5.; y += r * 0.5f)
 	{
 		for (float x = -layer_W / 2.; x <= layer_W / 2.; x += r * 0.5f)
 		{
 			for (float z = -layer_W / 2.; z <= layer_W / 2.; z += r * 0.5f)
 			{
-				// if (particles.size() > pN)
-				// {
-				// 	break;
-				// }
+				// Only add new particles up to the specified pN
+                if (particles.size() >= currentParticleCount + nP)
+                {
+                    break;
+                }
 
 				Particle p;
 				p.pos = glm::vec3(x, y, z);
-				p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
-				p.force = glm::vec3(0, -::G * 2, 0);
+				p.pos_old = p.pos; // + 0.001f * glm::vec3(rand01(), rand01(), rand01());
+				p.force = glm::vec3(0, 0, 0);
 				p.sigma = 3.f;
 				p.beta = 4.f;
 				particles.push_back(p);
 			}
 		}
-		// layer++;
-		// if (layer >= pL)
-		// {
-		// 	break;
-		// }
 	}
 }
 
@@ -1434,7 +1426,7 @@ void Keyboard(unsigned char c, int x, int y)
 		break;
 
 	case ' ':
-		addParticleLayers(4);
+		addMoreParticles(500);
 		break;
 
 	case 'g':
