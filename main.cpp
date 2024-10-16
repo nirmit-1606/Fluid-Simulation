@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip> // for std::setprecision
+#include <omp.h>  // Include OpenMP header
 
 // #include <omp.h>
 
@@ -206,7 +207,7 @@ const float k = spacing / 1000.0f; // Far pressure weight
 const float k_near = k * 10.;	   // Near pressure weight
 const float r = spacing * 1.25f;   // Radius of Support
 const float rsq = r * r;		   // ... squared for performance stuff
-const float SIM_W = .;		   // The size of the world
+const float SIM_W = .8;		   // The size of the world
 const float bottom = 0;			   // The floor of the world
 const float i_girth = 1.f;		   // initial parameters
 
@@ -499,7 +500,7 @@ void addMoreParticles(const unsigned int nP)
 // Update particle positions
 void step()
 {
-	//
+	#pragma omp parallel for
 	for (int i = 0; i < (int)particles.size(); ++i)
 	{
 		// Apply the currently accumulated forces
@@ -581,6 +582,7 @@ void step()
 	// DENSITY
 	// Calculate the density by basically making a weighted sum
 	// of the distances of neighboring particles within the radius of support (r)
+	#pragma omp parallel for
 	for (int i = 0; i < (int)particles.size(); ++i)
 	{
 		particles[i].rho = 0;
@@ -636,6 +638,7 @@ void step()
 
 	// PRESSURE
 	// Make the simple pressure calculation from the equation of state.
+	#pragma omp parallel for
 	for (int i = 0; i < (int)particles.size(); ++i)
 	{
 		particles[i].press = k * (particles[i].rho - rest_density);
@@ -645,6 +648,7 @@ void step()
 	// PRESSURE FORCE
 	// We will force particles in or out from their neighbors
 	// based on their difference from the rest density.
+	#pragma omp parallel for
 	for (int i = 0; i < (int)particles.size(); ++i)
 	{
 		// For each of the neighbors
@@ -662,11 +666,15 @@ void step()
 			dX += D;
 		}
 
-		particles[i].force -= dX;
+		#pragma omp critical
+		{
+			particles[i].force -= dX;
+		}		
 	}
 
 	// Viscosity
 	// fprintf(stderr, "rho: %3.5f\n", 80000.f * fabs(glm::dot(particles[0].vel.x, particles[0].vel.z)));
+	#pragma omp parallel for
 	for (int i = 0; i < (int)particles.size(); ++i)
 	{
 		// We'll let the color be determined by
@@ -707,6 +715,13 @@ int main(int argc, char *argv[])
 	// turn on the glut package:
 	// (do this before checking argc and argv since glutInit might
 	// pull some command line arguments out)
+
+#ifdef _OPENMP
+	fprintf( stderr, "OpenMP version %d is supported here\n", _OPENMP );
+#else
+	fprintf( stderr, "OpenMP is not supported here - sorry!\n" );
+	exit( 0 );
+#endif
 
 	glutInit(&argc, argv);
 
