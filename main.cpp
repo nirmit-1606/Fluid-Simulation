@@ -8,7 +8,7 @@
 #include <iomanip> // for std::setprecision
 #include <omp.h>  // Include OpenMP header
 
-// #include <omp.h>
+#define NUMT 4
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -501,10 +501,6 @@ void addMoreParticles(const unsigned int nP)
 	}
 }
 
-
-
-
-
 // --------------------------------------------------------------------
 // Update particle positions
 void step()
@@ -738,6 +734,11 @@ int main(int argc, char *argv[])
 	fprintf( stderr, "OpenMP is not supported here - sorry!\n" );
 	exit( 0 );
 #endif
+
+	int numprocs = omp_get_num_procs( );
+	fprintf( stderr, "Number of cores present in the system: %d\n", numprocs );
+
+	omp_set_num_threads( numprocs );
 
 	glutInit(&argc, argv);
 
