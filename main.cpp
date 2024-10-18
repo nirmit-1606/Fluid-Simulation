@@ -201,6 +201,9 @@ std::vector<Particle> particles;
 // --------------------------------------------------------------------
 // Some constants for the relevant simulation.
 const float p_size = 2;		   // particle size
+const float dT = 0.01;			// delta time, for step iteration
+const float sigma = 1.;
+const float beta = 1.;
 const float G = .001f * .25;		   // Gravitational Constant for our simulation
 const float spacing = .07f;		   // Spacing of particles
 const float k = spacing / 1000.0f; // Far pressure weight
@@ -456,6 +459,7 @@ void initParticles(const unsigned int pN)
 				Particle p;
 				p.pos = glm::vec3(x, y, z);
 				p.pos_old = p.pos; // + 0.001f * glm::vec3(rand01(), rand01(), rand01());
+				p.vel = glm::vec3(0, 0, 0);
 				p.force = glm::vec3(0, 0, 0);
 				p.sigma = 3.f;
 				p.beta = 4.f;
@@ -487,6 +491,7 @@ void addMoreParticles(const unsigned int nP)
 				Particle p;
 				p.pos = glm::vec3(x, y, z);
 				p.pos_old = p.pos; // + 0.001f * glm::vec3(rand01(), rand01(), rand01());
+				p.vel = glm::vec3(0, 0, 0);
 				p.force = glm::vec3(0, 0, 0);
 				p.sigma = 3.f;
 				p.beta = 4.f;
@@ -496,13 +501,24 @@ void addMoreParticles(const unsigned int nP)
 	}
 }
 
+
+
+
+
 // --------------------------------------------------------------------
 // Update particle positions
 void step()
 {
+	// Simulation step
+
 	#pragma omp parallel for
 	for (int i = 0; i < (int)particles.size(); ++i)
 	{
+		// apply gravity
+		particles[i].vel += dT * glm::vec3(0.f, -::G, 0.f);
+
+
+
 		// Apply the currently accumulated forces
 		particles[i].pos += particles[i].force;
 
