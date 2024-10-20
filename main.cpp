@@ -214,7 +214,7 @@ const float SIM_W = .8;		   // The size of the world
 const float bottom = 0;			   // The floor of the world
 const float i_girth = 1.f;		   // initial parameters
 
-int N = 1000;
+int N = 500;
 float rest_density = 3.;	   // Rest Density
 
 // #define DEMO_Z_FIGHTING
@@ -241,6 +241,7 @@ float Time;			 // used for animation, this has a value between 0. and 1.
 int Xmouse, Ymouse;	 // mouse values
 float Xrot, Yrot;	 // rotation angles in degrees
 int displayCnt;
+double timeSum;
 
 bool doSimulation;
 bool useGravity;
@@ -729,14 +730,14 @@ int main(int argc, char *argv[])
 	// pull some command line arguments out)
 
 #ifdef _OPENMP
-	fprintf( stderr, "OpenMP version %d is supported here\n", _OPENMP );
+	// fprintf( stderr, "OpenMP version %d is supported here\n", _OPENMP );
 #else
 	fprintf( stderr, "OpenMP is not supported here - sorry!\n" );
 	exit( 0 );
 #endif
 
 	int numprocs = omp_get_num_procs( );
-	fprintf( stderr, "Number of cores present in the system: %d\n", numprocs );
+	// fprintf( stderr, "Number of cores present in the system: %d\n", numprocs );
 
 	omp_set_num_threads( numprocs );
 
@@ -799,19 +800,8 @@ void Animate()
 }
 
 // draw the complete scene:
-
-int ms;
-float i_time, f_time, fpsSum;
-
 void Display()
-{
-	// initial timer
-	// if(displayCnt < 50){
-	// 	ms = glutGet(GLUT_ELAPSED_TIME);
-	// 	ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
-	// 	i_time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
-	// }
-	
+{	
 	if (DebugOn != 0)
 		fprintf(stderr, "Starting Display.\n");
 
@@ -831,7 +821,7 @@ void Display()
 
 	// specify shading to be flat:
 
-	glShadeModel(GL_SMOOTH);
+	glShadeModel(GL_FLAT);
 
 	// set the viewport to be a square centered in the window:
 
@@ -936,12 +926,8 @@ void Display()
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
 
-	// glVertexPointer( 3, GL_FLOAT, sizeof(Particle), &particles[0].pos );
-	// glEnableClientState( GL_VERTEX_ARRAY );
-	// glDrawArrays( GL_POINTS, 0, static_cast< GLsizei >( particles.size() ) );
-	// glDisableClientState( GL_VERTEX_ARRAY );
-
 	// Iterate through your particles and draw spheres at their positions
+	
 	// glColor3f(.2, .2, .9);
 	// glEnable(GL_BLEND);
 	// glDepthMask(GL_FALSE);
@@ -976,8 +962,27 @@ void Display()
 	// glDepthMask( GL_TRUE );
 	// glDisable( GL_BLEND );
 
-	if (doSimulation)
+	if (doSimulation){
+		double time0 = omp_get_wtime( );	// current clock time in seconds
 		step();
+		double time1 = omp_get_wtime( );	// current clock time in seconds
+		// displayCnt++;
+		if (displayCnt < 50)
+		{
+			// printf("time0 %.2f, time1 %.2f\n", time0, time1);
+			displayCnt++;
+			double t_diff = (time1-time0) * 1000000.;
+			timeSum += t_diff;
+			// printf("For %lu partiles, time to compute is: %.2f\n", particles.size(), t_diff);
+		}
+		else if (displayCnt == 50)
+		{
+			displayCnt++;
+			printf("Particles: %lu \t Computation time: %.2f\n", particles.size(), timeSum / 50.);
+		}
+		
+		
+	}
 
 	// glDisable(GL_LIGHT0);
 	// glDisable(GL_LIGHTING);
@@ -1027,23 +1032,6 @@ void Display()
 	DoRasterString( 5.f, 2.5f, 0.f, textCharArray2 );
 
 	// swap the double-buffered framebuffers:
-	// take time
-	
-	// if(displayCnt < 50){
-	// 	ms = glutGet(GLUT_ELAPSED_TIME);
-	// 	ms %= MS_PER_CYCLE;						// makes the value of ms between 0 and MS_PER_CYCLE-1
-	// 	f_time = (float)ms / (float)MS_PER_CYCLE; // makes the value of Time between 0. and slightly less than 1.
-	// 	float dTime = f_time - i_time;
-	// 	float fps = 1.f / dTime;
-	// 	fpsSum += fps;
-	// 	// fprintf(stderr, "Δ Time: %f\tfps: %8.2f\n", dTime, fps);
-	// 	// fprintf(stderr, "%8.2f\n", fps);
-	// 	displayCnt++;
-	// }
-	// else if(displayCnt == 50){
-	// 	fprintf(stderr, "Average fps: %8.2f\n", fpsSum/50.f);
-	// 	displayCnt++;
-	// }
 
 	glutSwapBuffers();
 
@@ -1508,11 +1496,10 @@ void Keyboard(unsigned char c, int x, int y)
 	
 	// used for gathering graph data
 	case 'a':
-		particles.clear();
-		initParticles(600);
-		// fprintf(stderr, "200 particles: ");
+		// particles.clear();
+		addMoreParticles(200);
 		displayCnt = 0;
-		fpsSum = 0;
+		timeSum = 0;
 		break;
 	
 	case 'c':
@@ -1647,6 +1634,7 @@ void Reset()
 	Xrot = Yrot = 0.;
 	
 	displayCnt = 0;
+	timeSum = 0;
 	particles.clear();
 	initParticles(N);
 	doSimulation = false;
