@@ -200,7 +200,7 @@ std::vector<Particle> particles;
 
 // --------------------------------------------------------------------
 // Some constants for the relevant simulation.
-const float p_size = 2;		   // particle size
+const float p_size = 4;		   // particle size
 const float dT = 0.01;			// delta time, for step iteration
 const float sigma = 1.;
 const float beta = 1.;
@@ -459,7 +459,7 @@ void initParticles(const unsigned int pN)
 
 				Particle p;
 				p.pos = glm::vec3(x, y, z);
-				p.pos_old = p.pos; // + 0.001f * glm::vec3(rand01(), rand01(), rand01());
+				p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
 				p.vel = glm::vec3(0, 0, 0);
 				p.force = glm::vec3(0, 0, 0);
 				p.sigma = 3.f;
