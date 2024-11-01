@@ -477,7 +477,7 @@ void addMoreParticles(const unsigned int nP)
 
 	// Add particles only if the current size is less than pN
 	float layer_W = i_girth * 0.4;
-	for (float y = bottom + 2.; y <= 5.; y += r * 0.5f)
+	for (float y = bottom + 1.; y <= 5.; y += r * 0.5f)
 	{
 		for (float x = -layer_W / 2.; x <= layer_W / 2.; x += r * 0.5f)
 		{
@@ -913,11 +913,14 @@ void Display()
 		particleColors.push_back(particle.b); // blue component
 	}
 
-	// glColor3f(.5, .6, .9);
+	glColor3f(.5, .6, .9);
 
 	// Use the color array
 	glColorPointer(3, GL_FLOAT, 0, particleColors.data());
-	glEnableClientState(GL_COLOR_ARRAY);
+	if (useColorVisual)
+	{
+		glEnableClientState(GL_COLOR_ARRAY);
+	}
 
 	// Draw particles
 	glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(particles.size()));
