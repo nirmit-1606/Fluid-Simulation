@@ -443,31 +443,43 @@ IndexType indexsp(4093, r*2);
 // --------------------------------------------------------------------
 void initParticles(const unsigned int pN)
 {
-	// Add particles only if the current size is less than pN
-	float layer_W = i_girth * 0.4;
-	for (float y = bottom + 0.1; y <= 5.; y += r * 0.5f)
-	{
-		for (float x = -layer_W / 2.; x <= layer_W / 2.; x += r * 0.5f)
-		{
-			for (float z = -layer_W / 2.; z <= layer_W / 2.; z += r * 0.5f)
-			{
-				// Only add new particles up to the specified pN
-                if (particles.size() >= pN)
+	float layer_radius = i_girth * 0.2;  // Radius of the cylindrical layer
+    float maxHeight = 5.0;               // Maximum height of the cylinder
+    float minDistance = r * 0.5f;        // Minimum distance between particles
+
+    for (float y = bottom + 0.1; y <= maxHeight; y += minDistance)
+    {
+        // Start from the center and place particles in concentric rings
+        for (float radius = 0; radius <= layer_radius; radius += minDistance)
+        {
+            // Number of particles around this radius (circumference / min distance)
+            int numParticles = (radius == 0) ? 1 : static_cast<int>((2 * M_PI * radius) / minDistance);
+
+            for (int i = 0; i < numParticles; ++i)
+            {
+                if (particles.size() >= pN)  // Stop if we reach the desired number of particles
                 {
-                    break;
+                    return;
                 }
 
-				Particle p;
-				p.pos = glm::vec3(x, y, z);
-				p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
-				p.vel = glm::vec3(0, 0, 0);
-				p.force = glm::vec3(0, 0, 0);
-				p.sigma = 3.f;
-				p.beta = 4.f;
-				particles.push_back(p);
-			}
-		}
-	}
+                // Angle for this particle in the current ring
+                float angle = i * (2 * M_PI / numParticles);
+
+                // Convert polar coordinates (radius, angle) to Cartesian (x, z)
+                float x = radius * cos(angle);
+                float z = radius * sin(angle);
+
+                Particle p;
+                p.pos = glm::vec3(x, y, z);
+                p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
+                p.vel = glm::vec3(0, 0, 0);
+                p.force = glm::vec3(0, 0, 0);
+                p.sigma = 3.f;
+                p.beta = 4.f;
+                particles.push_back(p);
+            }
+        }
+    }
 }
 
 void addMoreParticles(const unsigned int nP)
@@ -475,28 +487,41 @@ void addMoreParticles(const unsigned int nP)
 	// Number of particles already in the system
     unsigned int currentParticleCount = particles.size();
 
-	// Add particles only if the current size is less than pN
-	float layer_W = i_girth * 0.4;
-	for (float y = bottom + 1.; y <= 5.; y += r * 0.5f)
-	{
-		for (float x = -layer_W / 2.; x <= layer_W / 2.; x += r * 0.5f)
-		{
-			for (float z = -layer_W / 2.; z <= layer_W / 2.; z += r * 0.5f)
-			{
+	float layer_radius = i_girth * 0.2;  // Radius of the cylindrical layer
+    float maxHeight = 5.0;               // Maximum height of the cylinder
+    float minDistance = r * 0.5f;        // Minimum distance between particles
+
+	for (float y = bottom + 0.8; y <= maxHeight; y += minDistance)
+    {
+        // Start from the center and place particles in concentric rings
+        for (float radius = 0; radius <= layer_radius; radius += minDistance)
+        {
+            // Number of particles around this radius (circumference / min distance)
+            int numParticles = (radius == 0) ? 1 : static_cast<int>((2 * M_PI * radius) / minDistance);
+
+            for (int i = 0; i < numParticles; ++i)
+            {
 				// Only add new particles up to the specified pN
                 if (particles.size() >= currentParticleCount + nP)
                 {
                     break;
                 }
 
-				Particle p;
-				p.pos = glm::vec3(x, y, z);
-				p.pos_old = p.pos; // + 0.001f * glm::vec3(rand01(), rand01(), rand01());
-				p.vel = glm::vec3(0, 0, 0);
-				p.force = glm::vec3(0, 0, 0);
-				p.sigma = 3.f;
-				p.beta = 4.f;
-				particles.push_back(p);
+				// Angle for this particle in the current ring
+                float angle = i * (2 * M_PI / numParticles);
+
+                // Convert polar coordinates (radius, angle) to Cartesian (x, z)
+                float x = radius * cos(angle);
+                float z = radius * sin(angle);
+
+                Particle p;
+                p.pos = glm::vec3(x, y, z);
+                p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
+                p.vel = glm::vec3(0, 0, 0);
+                p.force = glm::vec3(0, 0, 0);
+                p.sigma = 3.f;
+                p.beta = 4.f;
+                particles.push_back(p);
 			}
 		}
 	}
@@ -558,18 +583,29 @@ void step()
 			{
 				bound = SIM_W * 3.f;
 			}
-			if (particles[i].pos.x < -bound)
-				particles[i].force.x -= (particles[i].pos.x - -bound) / 8;
-			if (particles[i].pos.x > bound)
-				particles[i].force.x -= (particles[i].pos.x - bound) / 8;
+			// Calculate the distance of the particle from the circle center in the xz-plane
+			float dx = particles[i].pos.x - 0.f; // center_x = 0
+			float dz = particles[i].pos.z - 0.f; // center_z = 0
+			float distance_from_center = sqrt(dx * dx + dz * dz);
 
-			if (particles[i].pos.z < -SIM_W)
-				particles[i].force.z -= (particles[i].pos.z - -SIM_W) / 8;
-			if (particles[i].pos.z > SIM_W)
-				particles[i].force.z -= (particles[i].pos.z - SIM_W) / 8;
+			// If the particle is outside the circular boundary
+			if (distance_from_center > bound) {
+				// Calculate the push-back force
+				float excess_distance = distance_from_center - bound;
 
-			if (particles[i].pos.y < bottom)
+				// Normalize the direction vector (dx, dz)
+				float nx = dx / distance_from_center;
+				float nz = dz / distance_from_center;
+
+				// Apply force to push the particle back within the circle
+				particles[i].force.x -= nx * excess_distance / 8;
+				particles[i].force.z -= nz * excess_distance / 8;
+			}
+
+			// Limit particles in y-axis (for bottom boundary)
+			if (particles[i].pos.y < bottom) {
 				particles[i].force.y -= (particles[i].pos.y) / 8;
+			}
 			// if (particles[i].pos.y > bottom+10)
 			// 	particles[i].force.y -= (particles[i].pos.y - (bottom+10)) / 8;
 		}
