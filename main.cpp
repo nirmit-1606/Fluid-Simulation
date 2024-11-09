@@ -470,7 +470,7 @@ void initParticles(const unsigned int pN)
                 float z = radius * sin(angle);
 
                 Particle p;
-                p.pos = glm::vec3(x, y, z);
+                p.pos = glm::vec3(x, y, z) + 0.01f * glm::vec3(rand01(), rand01(), rand01());
                 p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
                 p.vel = glm::vec3(0, 0, 0);
                 p.force = glm::vec3(0, 0, 0);
@@ -515,7 +515,7 @@ void addMoreParticles(const unsigned int nP)
                 float z = radius * sin(angle);
 
                 Particle p;
-                p.pos = glm::vec3(x, y, z);
+                p.pos = glm::vec3(x, y, z) + 0.01f * glm::vec3(rand01(), rand01(), rand01());
                 p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
                 p.vel = glm::vec3(0, 0, 0);
                 p.force = glm::vec3(0, 0, 0);
@@ -563,7 +563,7 @@ void step()
 		// If the velocity is greater than the max velocity, then cut it in half.
 		if (vel_mag > max_vel * max_vel)
 		{
-			particles[i].vel *= .1f;
+			particles[i].vel *= .08f;
 		}
 
 		// Normal verlet stuff
@@ -604,7 +604,7 @@ void step()
 
 			// Limit particles in y-axis (for bottom boundary)
 			if (particles[i].pos.y < bottom) {
-				particles[i].force.y -= (particles[i].pos.y) / 8;
+				particles[i].force.y -= 0.4 * (particles[i].pos.y) / 8;
 			}
 			// if (particles[i].pos.y > bottom+10)
 			// 	particles[i].force.y -= (particles[i].pos.y - (bottom+10)) / 8;
@@ -1377,7 +1377,7 @@ void InitLists()
 
 	ParticleList = glGenLists(1);
 	glNewList(ParticleList, GL_COMPILE);
-		OsuSphere(p_size, 10, 10);
+		OsuSphere(0.03, 8, 8);
 	glEndList();
 
 #define YGRID	-0.07f
