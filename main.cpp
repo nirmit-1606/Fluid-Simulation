@@ -248,6 +248,7 @@ bool useGravity;
 bool useColorVisual;
 bool externalForce;
 bool shrinkWorld;
+bool useLighting;
 
 // function prototypes:
 
@@ -536,11 +537,6 @@ void step()
 	#pragma omp parallel for
 	for (int i = 0; i < (int)particles.size(); ++i)
 	{
-		// apply gravity
-		particles[i].vel += dT * glm::vec3(0.f, -::G, 0.f);
-
-
-
 		// Apply the currently accumulated forces
 		particles[i].pos += particles[i].force;
 
@@ -928,42 +924,44 @@ void Display()
 	glEnable(GL_NORMALIZE);
 
 	// draw the box object by calling up its display list:
-	// glEnable(GL_LIGHTING);
-
-	// SetPointLight(GL_LIGHT0, -5., 5., 5., 1., 1., 1.);
-
-	glPointSize(p_size);
-	// SetMaterial(.2, .9, 1., 10.);
-
-	// Enable vertex arrays for positions
-	glVertexPointer(3, GL_FLOAT, sizeof(Particle), &particles[0].pos);
-	glEnableClientState(GL_VERTEX_ARRAY);
-
-	// Prepare and enable color arrays for particles
-	std::vector<float> particleColors;
-	particleColors.reserve(particles.size() * 3);  // r, g, b for each particle
-
-	for (const auto& particle : particles) {
-		particleColors.push_back(particle.r); // red component
-		particleColors.push_back(particle.g); // green component
-		particleColors.push_back(particle.b); // blue component
-	}
-
-	glColor3f(.5, .6, .9);
-
-	// Use the color array
-	glColorPointer(3, GL_FLOAT, 0, particleColors.data());
-	if (useColorVisual)
+	if (useLighting)
 	{
-		glEnableClientState(GL_COLOR_ARRAY);
+		glEnable(GL_LIGHTING);
+		SetPointLight(GL_LIGHT0, -5., 5., 5., 1., 1., 1.);
 	}
 
-	// Draw particles
-	glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(particles.size()));
+	// glPointSize(p_size);
+	// // SetMaterial(.2, .9, 1., 10.);
 
-	// Disable arrays after drawing
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_COLOR_ARRAY);
+	// // Enable vertex arrays for positions
+	// glVertexPointer(3, GL_FLOAT, sizeof(Particle), &particles[0].pos);
+	// glEnableClientState(GL_VERTEX_ARRAY);
+
+	// // Prepare and enable color arrays for particles
+	// std::vector<float> particleColors;
+	// particleColors.reserve(particles.size() * 3);  // r, g, b for each particle
+
+	// for (const auto& particle : particles) {
+	// 	particleColors.push_back(particle.r); // red component
+	// 	particleColors.push_back(particle.g); // green component
+	// 	particleColors.push_back(particle.b); // blue component
+	// }
+
+	// glColor3f(.5, .6, .9);
+
+	// // Use the color array
+	// glColorPointer(3, GL_FLOAT, 0, particleColors.data());
+	// if (useColorVisual)
+	// {
+	// 	glEnableClientState(GL_COLOR_ARRAY);
+	// }
+
+	// // Draw particles
+	// glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(particles.size()));
+
+	// // Disable arrays after drawing
+	// glDisableClientState(GL_VERTEX_ARRAY);
+	// glDisableClientState(GL_COLOR_ARRAY);
 
 	// Iterate through your particles and draw spheres at their positions
 	
@@ -972,21 +970,25 @@ void Display()
 	// glDepthMask(GL_FALSE);
 	// glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	
-	/*for (const auto &particle : particles)
+	for (const auto &particle : particles)
 	{
 		if (useColorVisual)
 		{
-			SetMaterial(particle.r, particle.g, particle.b, 10.);
+			glColor3f(particle.r, particle.g, particle.b);
 		}
 		else
 		{
-			SetMaterial(.2, .9, 1., 10.);
+			glColor3f(.2, .9, 1.);
+		}
+		if (useLighting)
+		{
+			SetMaterial(particle.r, particle.g, particle.b, 5.);
 		}
 		glPushMatrix();
 		glTranslatef(particle.pos.x, particle.pos.y, particle.pos.z); // Translate to the position of the particle
 		glCallList(ParticleList);									  // Call your sphere drawing function
 		glPopMatrix();
-	}*/
+	}
 
 	if(useGravity)
 	{
@@ -1023,8 +1025,11 @@ void Display()
 		
 	}
 
-	// glDisable(GL_LIGHT0);
-	// glDisable(GL_LIGHTING);
+	if (useLighting)
+	{
+		glDisable(GL_LIGHT0);
+		glDisable(GL_LIGHTING);
+	}
 
 #ifdef DEMO_Z_FIGHTING
 	if (DepthFightingOn != 0)
@@ -1488,6 +1493,11 @@ void Keyboard(unsigned char c, int x, int y)
 		addMoreParticles(500);
 		break;
 
+	case 'l':
+	case 'L':
+		useLighting = !useLighting;
+		break;
+
 	case 'g':
 	case 'G':
 		useGravity = !useGravity;
@@ -1681,6 +1691,7 @@ void Reset()
 	useColorVisual = false;
 	externalForce = false;
 	shrinkWorld = true;
+	useLighting = false;
 }
 
 // called when user resizes the window:
