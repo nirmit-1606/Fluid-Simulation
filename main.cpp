@@ -249,6 +249,7 @@ bool useColorVisual;
 bool externalForce;
 bool shrinkWorld;
 bool useLighting;
+bool useOpening;
 
 // function prototypes:
 
@@ -492,7 +493,7 @@ void addMoreParticles(const unsigned int nP)
     float maxHeight = 5.0;               // Maximum height of the cylinder
     float minDistance = r * 0.5f;        // Minimum distance between particles
 
-	for (float y = bottom + 0.8; y <= maxHeight; y += minDistance)
+	for (float y = bottom + 1.8; y <= maxHeight; y += minDistance)
     {
         // Start from the center and place particles in concentric rings
         for (float radius = 0; radius <= layer_radius; radius += minDistance)
@@ -527,6 +528,44 @@ void addMoreParticles(const unsigned int nP)
 		}
 	}
 }
+
+// Define container properties
+const float container_height = 1.5f;    // Height of the container bottom
+const float container_top = container_height + 2.0f; // Top boundary of the container
+const float container_width = SIM_W / 2;     // Width of the container in the x and z directions
+const float opening_width = 0.2f;       // Width of the opening at the container's bottom
+
+void enforceContainerBoundaries(Particle &p) {
+    // Left and right walls in x-direction (container boundaries)
+    if (p.pos.x < -container_width) {
+        p.force.x -= (p.pos.x + container_width) / 8;
+    }
+    if (p.pos.x > container_width) {
+        p.force.x -= (p.pos.x - container_width) / 8;
+    }
+
+    // Front and back walls in z-direction (container boundaries)
+    if (p.pos.z < -container_width) {
+        p.force.z -= (p.pos.z + container_width) / 8;
+    }
+    if (p.pos.z > container_width) {
+        p.force.z -= (p.pos.z - container_width) / 8;
+    }
+
+    // Bottom boundary of the container, excluding the opening
+    if (p.pos.y < container_height && 
+		(!useOpening || (abs(p.pos.x) > opening_width / 2 || abs(p.pos.z) > opening_width / 2))) 
+    {
+        // Only apply force if particle is outside the opening
+        p.force.y -= (p.pos.y - container_height) / 8;
+    }
+
+    // Top boundary of the container
+    if (p.pos.y > container_top) {
+        p.force.y -= (p.pos.y - container_top) / 8;
+    }
+}
+
 
 // --------------------------------------------------------------------
 // Update particle positions
@@ -570,6 +609,9 @@ void step()
 		// Make a little spring force to push it back in.
 		if (useGravity)
 		{
+			if (particles[i].pos.y >= container_height - 0.1)
+				enforceContainerBoundaries(particles[i]);
+			else{
 			float bound;
 			if(shrinkWorld)
 			{
@@ -579,31 +621,43 @@ void step()
 			{
 				bound = SIM_W * 3.f;
 			}
-			// Calculate the distance of the particle from the circle center in the xz-plane
-			float dx = particles[i].pos.x - 0.f; // center_x = 0
-			float dz = particles[i].pos.z - 0.f; // center_z = 0
-			float distance_from_center = sqrt(dx * dx + dz * dz);
+			// // Calculate the distance of the particle from the circle center in the xz-plane
+			// float dx = particles[i].pos.x - 0.f; // center_x = 0
+			// float dz = particles[i].pos.z - 0.f; // center_z = 0
+			// float distance_from_center = sqrt(dx * dx + dz * dz);
 
-			// If the particle is outside the circular boundary
-			if (distance_from_center > bound) {
-				// Calculate the push-back force
-				float excess_distance = distance_from_center - bound;
+			// // If the particle is outside the circular boundary
+			// if (distance_from_center > bound) {
+			// 	// Calculate the push-back force
+			// 	float excess_distance = distance_from_center - bound;
 
-				// Normalize the direction vector (dx, dz)
-				float nx = dx / distance_from_center;
-				float nz = dz / distance_from_center;
+			// 	// Normalize the direction vector (dx, dz)
+			// 	float nx = dx / distance_from_center;
+			// 	float nz = dz / distance_from_center;
 
-				// Apply force to push the particle back within the circle
-				particles[i].force.x -= nx * excess_distance / 8;
-				particles[i].force.z -= nz * excess_distance / 8;
-			}
+			// 	// Apply force to push the particle back within the circle
+			// 	particles[i].force.x -= nx * excess_distance / 8;
+			// 	particles[i].force.z -= nz * excess_distance / 8;
+			// }
+
+			if (particles[i].pos.x < -bound)
+				particles[i].force.x -= (particles[i].pos.x - -bound) / 8;
+			if (particles[i].pos.x > bound)
+				particles[i].force.x -= (particles[i].pos.x - bound) / 8;
+
+			if (particles[i].pos.z < -SIM_W)
+				particles[i].force.z -= (particles[i].pos.z - -SIM_W) / 8;
+			if (particles[i].pos.z > SIM_W)
+				particles[i].force.z -= (particles[i].pos.z - SIM_W) / 8;
 
 			// Limit particles in y-axis (for bottom boundary)
 			if (particles[i].pos.y < bottom) {
-				particles[i].force.y -= 0.4 * (particles[i].pos.y) / 8;
+				particles[i].force.y -= (particles[i].pos.y) / 8;
 			}
+
 			// if (particles[i].pos.y > bottom+10)
 			// 	particles[i].force.y -= (particles[i].pos.y - (bottom+10)) / 8;
+			}
 		}
 
 		if (externalForce)
@@ -923,13 +977,6 @@ void Display()
 
 	glEnable(GL_NORMALIZE);
 
-	// draw the box object by calling up its display list:
-	if (useLighting)
-	{
-		glEnable(GL_LIGHTING);
-		SetPointLight(GL_LIGHT0, -5., 5., 5., 1., 1., 1.);
-	}
-
 	// glPointSize(p_size);
 	// // SetMaterial(.2, .9, 1., 10.);
 
@@ -963,13 +1010,13 @@ void Display()
 	// glDisableClientState(GL_VERTEX_ARRAY);
 	// glDisableClientState(GL_COLOR_ARRAY);
 
+	if (useLighting)
+	{
+		glEnable(GL_LIGHTING);
+		SetPointLight(GL_LIGHT0, -5., 5., 5., 1., 1., 1.);
+	}
+
 	// Iterate through your particles and draw spheres at their positions
-	
-	// glColor3f(.2, .2, .9);
-	// glEnable(GL_BLEND);
-	// glDepthMask(GL_FALSE);
-	// glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-	
 	for (const auto &particle : particles)
 	{
 		if (useColorVisual)
@@ -986,7 +1033,7 @@ void Display()
 		}
 		glPushMatrix();
 		glTranslatef(particle.pos.x, particle.pos.y, particle.pos.z); // Translate to the position of the particle
-		glCallList(ParticleList);									  // Call your sphere drawing function
+		glCallList(ParticleList);									  // Draw low-poly sphere at the position
 		glPopMatrix();
 	}
 
@@ -998,10 +1045,6 @@ void Display()
 		else
 			glCallList(GridDL2);
 	}
-	
-
-	// glDepthMask( GL_TRUE );
-	// glDisable( GL_BLEND );
 
 	if (doSimulation){
 		double time0 = omp_get_wtime( );	// current clock time in seconds
@@ -1021,8 +1064,6 @@ void Display()
 			displayCnt++;
 			printf("Particles: %lu \t Computation time: %.2f\n", particles.size(), timeSum / 50.);
 		}
-		
-		
 	}
 
 	if (useLighting)
@@ -1470,7 +1511,8 @@ void Keyboard(unsigned char c, int x, int y)
 	{
 	case 'o':
 	case 'O':
-		NowProjection = ORTHO;
+		// NowProjection = ORTHO;
+		useOpening = !useOpening;
 		break;
 
 	case 'p':
@@ -1692,6 +1734,7 @@ void Reset()
 	externalForce = false;
 	shrinkWorld = true;
 	useLighting = false;
+	useOpening = false;
 }
 
 // called when user resizes the window:
