@@ -609,7 +609,7 @@ void step()
 		// Make a little spring force to push it back in.
 		if (useGravity)
 		{
-			if (particles[i].pos.y >= container_height - 0.1)
+			if (particles[i].pos.y >= container_height - 0.05)
 				enforceContainerBoundaries(particles[i]);
 			else{
 			float bound;
@@ -907,7 +907,7 @@ void Display()
 
 	// specify shading to be flat:
 
-	glShadeModel(GL_FLAT);
+	glShadeModel(GL_SMOOTH);
 
 	// set the viewport to be a square centered in the window:
 
