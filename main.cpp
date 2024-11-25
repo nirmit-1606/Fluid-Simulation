@@ -28,6 +28,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <glui.h>
+
 //	This is a sample OpenGL / GLUT program
 //
 //	The objective is to draw a 3d object and change the color of the axes
@@ -103,7 +105,8 @@ enum Projections
 enum ButtonVals
 {
 	RESET,
-	QUIT
+	QUIT,
+	ADD
 };
 
 // window background color (rgba):
@@ -250,6 +253,9 @@ bool externalForce;
 bool shrinkWorld;
 bool useLighting;
 bool useOpening;
+int DisplayFrameRate = 0;
+int Verbose = 1;
+float avg_frameRate = 0;
 
 // function prototypes:
 
@@ -365,6 +371,7 @@ float randab(float a, float b)
 // #include "loadobjfile.cpp"
 // #include "keytime.cpp"
 // #include "glslprogram.cpp"'
+#include "initglui.cpp"
 
 // --------------------------------------------------------------------
 template <typename T>
@@ -842,6 +849,25 @@ int main(int argc, char *argv[])
 
 	Reset();
 
+	//call glui
+
+	InitGluiMain();
+
+// 	int segments = 5;
+
+// 	glutInitWindowPosition(glutGet(GLUT_WINDOW_WIDTH) + 50, 0);
+// 	GLUI *glui = GLUI_Master.create_glui( "GLUI" );
+// 	glui->add_statictext("Hello, GLUI!");
+//   new GLUI_Checkbox( glui, "Wireframe" );
+//   (new GLUI_Spinner( glui, "Segments:", &segments ))->set_int_limits( 3, 60 ); 
+   
+//   glui->set_main_gfx_window( MainWindow );
+
+//   /* We register the idle callback with GLUI, *not* with GLUT */
+//   GLUI_Master.set_glutIdleFunc( myGlutIdle ); 
+
+//   glutMainLoop();
+
 	// Initialize initial number of particles
 	initParticles(N);
 
@@ -853,6 +879,7 @@ int main(int argc, char *argv[])
 	// (this will never return)
 
 	glutSetWindow(MainWindow);
+
 	glutMainLoop();
 
 	// glutMainLoop( ) never actually returns
@@ -967,11 +994,11 @@ void Display()
 
 	// possibly draw the axes:
 
-	// if (AxesOn != 0)
-	// {
-	// 	glColor3fv(&Colors[NowColor][0]);
-	// 	glCallList(AxesList);
-	// }
+	if (AxesOn != 0)
+	{
+		glColor3fv(&Colors[NowColor][0]);
+		glCallList(AxesList);
+	}
 
 	// since we are using glScalef( ), be sure the normals get unitized:
 
@@ -1059,10 +1086,13 @@ void Display()
 			timeSum += t_diff;
 			// printf("For %lu partiles, time to compute is: %.2f\n", particles.size(), t_diff);
 		}
-		else if (displayCnt == 50)
+		else
 		{
-			displayCnt++;
-			printf("Particles: %lu \t Computation time: %.2f\n", particles.size(), timeSum / 50.);
+			displayCnt = 0;
+			float avg = timeSum / 50.;
+			timeSum = 0;
+			avg_frameRate = 1000000. / avg;
+			// printf("Particles: %lu \t Computation time: %.2f\n", particles.size(), timeSum / 50.);
 		}
 	}
 
@@ -1111,11 +1141,20 @@ void Display()
 	// string to be displayed on screen
 	std::string textToDisplay1 = std::to_string(particles.size()) + " Particles";
 	std::string textToDisplay2 = "Rest density: " + std::to_string((int)rest_density);
+	std::string textToDisplay3 = "Frame Rate: " + std::to_string((float)avg_frameRate);
 	char *textCharArray1 = &textToDisplay1[0u];
 	char *textCharArray2 = &textToDisplay2[0u];
-	DoRasterString( 5.f, 7.f, 0.f, textCharArray1 );
-	DoRasterString( 5.f, 2.5f, 0.f, textCharArray2 );
-
+	char *textCharArray3 = &textToDisplay3[0u];
+	if (Verbose)
+	{
+		DoRasterString( 5.f, 7.f, 0.f, textCharArray1 );
+		DoRasterString( 5.f, 2.5f, 0.f, textCharArray2 );
+	}
+	if (DisplayFrameRate)
+	{
+		DoRasterString( 60.f, 2.5f, 0.f, textCharArray3 );
+	}
+	
 	// swap the double-buffered framebuffers:
 
 	glutSwapBuffers();
@@ -1713,7 +1752,7 @@ void MouseMotion(int x, int y)
 void Reset()
 {
 	ActiveButton = 0;
-	AxesOn = 1;
+	AxesOn = 0;
 	DebugOn = 0;
 	DepthBufferOn = 1;
 	DepthFightingOn = 0;
