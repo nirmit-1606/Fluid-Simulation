@@ -4,6 +4,7 @@
 //
 
 GLUI* GluiMain;
+GLUI* GluiFluid;
 
 const int MSEC = 1;
 float BackgroundIntensity = 0.5f; 
@@ -18,6 +19,7 @@ float EyeScale2 = 1.0f;             // Eye scale factor
 float EyeTransXYZ[3] = { 0.0f, 0.0f, 0.0f }; // Eye translation
 
 void SetBackgroundIntensity(int id) {}
+void SetRestDensity(int id) {}
 
 void
 GluiIdle(void)
@@ -175,4 +177,42 @@ InitGluiMain( void )
 	// this makes the kb command shortcuts more useable:
 
 	// GLUI_Master.set_glutKeyboardFunc( Keyboard );
+}
+
+void
+InitGluiFluid(void)
+{
+	GLUI_Panel* panel;
+
+	// setup the glui window:
+
+	glutInitWindowPosition(glutGet(GLUT_WINDOW_WIDTH) + 370, 0);
+	GluiFluid = GLUI_Master.create_glui((char*)GLUIFLUIDTITLE);
+
+
+	panel = GluiFluid->add_panel("Simulation", true);
+	GluiFluid->add_checkbox_to_panel(panel, "Simulate", &doSimulation);
+	GluiFluid->add_checkbox_to_panel(panel, "Gravity", &useGravity);
+	GluiFluid->add_checkbox_to_panel(panel, "Color Visual", &useColorVisual);
+	GluiFluid->add_checkbox_to_panel(panel, "External Force", &externalForce);
+	GluiFluid->add_checkbox_to_panel(panel, "Increase boundary", &shrinkWorld);
+	GluiFluid->add_checkbox_to_panel(panel, "Lighting", &useLighting);
+
+
+	panel = GluiFluid->add_panel("", true);
+	GLUI_Spinner* spinner = GluiFluid->add_spinner_to_panel(
+		panel,
+		"Rest Density",
+		GLUI_SPINNER_FLOAT,
+		&rest_density,
+		1,
+		(GLUI_Update_CB)SetRestDensity
+	);
+	// Set spinner limits
+	spinner->set_float_limits(1.0f, 15.0f, GLUI_LIMIT_CLAMP);
+
+
+	panel = GluiFluid->add_panel("Add more particles", true);
+	GluiFluid->add_button_to_panel(panel, "Add", ADD, (GLUI_Update_CB)Buttons);
+	GluiFluid->add_checkbox_to_panel(panel, "Open Hole", &useOpening);
 }

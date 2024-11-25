@@ -53,6 +53,7 @@
 
 const char *WINDOWTITLE = "OpenGL / GLUT Simulation -- Nirmit Patel";
 const char *GLUITITLE = "User Interface Window";
+const char *GLUIFLUIDTITLE = "Fluid Variables";
 
 // what the glui package defines as true and false:
 
@@ -245,17 +246,17 @@ int Xmouse, Ymouse;	 // mouse values
 float Xrot, Yrot;	 // rotation angles in degrees
 int displayCnt;
 double timeSum;
+float avg_frameRate = 0;
 
-bool doSimulation;
-bool useGravity;
-bool useColorVisual;
-bool externalForce;
-bool shrinkWorld;
-bool useLighting;
-bool useOpening;
+int doSimulation;
+int useGravity;
+int useColorVisual;
+int externalForce;
+int shrinkWorld;
+int useLighting;
+int useOpening;
 int DisplayFrameRate = 0;
 int Verbose = 1;
-float avg_frameRate = 0;
 
 // function prototypes:
 
@@ -852,21 +853,7 @@ int main(int argc, char *argv[])
 	//call glui
 
 	InitGluiMain();
-
-// 	int segments = 5;
-
-// 	glutInitWindowPosition(glutGet(GLUT_WINDOW_WIDTH) + 50, 0);
-// 	GLUI *glui = GLUI_Master.create_glui( "GLUI" );
-// 	glui->add_statictext("Hello, GLUI!");
-//   new GLUI_Checkbox( glui, "Wireframe" );
-//   (new GLUI_Spinner( glui, "Segments:", &segments ))->set_int_limits( 3, 60 ); 
-   
-//   glui->set_main_gfx_window( MainWindow );
-
-//   /* We register the idle callback with GLUI, *not* with GLUT */
-//   GLUI_Master.set_glutIdleFunc( myGlutIdle ); 
-
-//   glutMainLoop();
+	InitGluiFluid();
 
 	// Initialize initial number of particles
 	initParticles(N);
@@ -963,7 +950,7 @@ void Display()
 
 	// set the eye position, look-at position, and up-vector:
 
-	gluLookAt(0.f, 5.f, 5.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f);
+	gluLookAt(.5f, 2.f, 2.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f);
 
 	// rotate the scene:
 
