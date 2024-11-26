@@ -24,11 +24,11 @@
 #include <OpenGL/glu.h>
 #include "glut.h"
 #define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
-#include <glui.h>
+#include "glui.h"
 
 //	This is a sample OpenGL / GLUT program
 //
@@ -421,15 +421,13 @@ private:
 	// "Optimized Spatial Hashing for Collision Detection of Deformable Objects"
 	// Teschner, Heidelberger, et al.
 	// returns a hash between 0 and 2^32-1
-	struct TeschnerHash : std::unary_function<glm::ivec3, std::size_t>
-	{
-		std::size_t operator()(glm::ivec3 const &pos) const
-		{
+	struct TeschnerHash {
+		std::size_t operator()(const glm::ivec3& pos) const {
 			const unsigned int p1 = 73856093;
 			const unsigned int p2 = 19349663;
 			const unsigned int p3 = 83492791;
-			return size_t((pos.x * p1) ^ (pos.y * p2) ^ (pos.z * p3));
-		};
+			return static_cast<std::size_t>((pos.x * p1) ^ (pos.y * p2) ^ (pos.z * p3));
+		}
 	};
 
 	// returns the indexes of the cell pos is in, assuming a cellSize grid
@@ -621,7 +619,7 @@ void step()
 				enforceContainerBoundaries(particles[i]);
 			else{
 			float bound;
-			if(shrinkWorld)
+			if(!shrinkWorld)
 			{
 				bound = SIM_W;
 			}
@@ -1055,9 +1053,9 @@ void Display()
 	{
 		glColor3f(.1, .2, .3);
 		if (shrinkWorld)
-			glCallList(GridDL1);
-		else
 			glCallList(GridDL2);
+		else
+			glCallList(GridDL1);
 	}
 
 	if (doSimulation){
@@ -1758,7 +1756,7 @@ void Reset()
 	useGravity = true;
 	useColorVisual = false;
 	externalForce = false;
-	shrinkWorld = true;
+	shrinkWorld = false;
 	useLighting = false;
 	useOpening = false;
 }
