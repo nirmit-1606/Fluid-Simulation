@@ -20,6 +20,9 @@ float EyeTransXYZ[3] = { 0.0f, 0.0f, 0.0f }; // Eye translation
 
 void SetBackgroundIntensity(int id) {}
 void SetRestDensity(int id) {}
+void SetDT(int id) {}
+void SetMass(int id) {}
+void SetGravity(int id) {}
 
 void
 GluiIdle(void)
@@ -198,9 +201,18 @@ InitGluiFluid(void)
 	GluiFluid->add_checkbox_to_panel(panel, "Increase boundary", &shrinkWorld);
 	GluiFluid->add_checkbox_to_panel(panel, "Lighting", &useLighting);
 
-
-	panel = GluiFluid->add_panel("", true);
 	GLUI_Spinner* spinner = GluiFluid->add_spinner_to_panel(
+		panel,
+		"dT",
+		GLUI_SPINNER_FLOAT,
+		&dT,
+		1,
+		(GLUI_Update_CB)SetDT
+	);
+	// Set spinner limits
+	spinner->set_float_limits(0.8f, 1.6f, GLUI_LIMIT_CLAMP);
+
+	spinner = GluiFluid->add_spinner_to_panel(
 		panel,
 		"Rest Density",
 		GLUI_SPINNER_FLOAT,
@@ -211,8 +223,31 @@ InitGluiFluid(void)
 	// Set spinner limits
 	spinner->set_float_limits(1.0f, 15.0f, GLUI_LIMIT_CLAMP);
 
+	spinner = GluiFluid->add_spinner_to_panel(
+		panel,
+		"Gravity",
+		GLUI_SPINNER_FLOAT,
+		&G,
+		1,
+		(GLUI_Update_CB)SetGravity
+	);
+	// Set spinner limits
+	spinner->set_float_limits(0.0f, 0.0006f, GLUI_LIMIT_CLAMP);
+
+
+
 
 	panel = GluiFluid->add_panel("Add more particles", true);
+	spinner = GluiFluid->add_spinner_to_panel(
+		panel,
+		"Mass",
+		GLUI_SPINNER_FLOAT,
+		&mass,
+		1,
+		(GLUI_Update_CB)SetMass
+	);
+	// Set spinner limits
+	spinner->set_float_limits(0.1f, 5.0f, GLUI_LIMIT_CLAMP);
 	GluiFluid->add_button_to_panel(panel, "Add", ADD, (GLUI_Update_CB)Buttons);
 	GluiFluid->add_checkbox_to_panel(panel, "Open Hole", &useOpening);
 }

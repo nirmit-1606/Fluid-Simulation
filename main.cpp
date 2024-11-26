@@ -204,11 +204,8 @@ std::vector<Particle> particles;
 
 // --------------------------------------------------------------------
 // Some constants for the relevant simulation.
-const float p_size = 4;		   // particle size
-const float dT = 0.01;			// delta time, for step iteration
-const float sigma = 1.;
-const float beta = 1.;
-const float G = .001f * .25;		   // Gravitational Constant for our simulation
+
+float G = .001f * .25;		   // Gravitational Constant for our simulation
 const float spacing = .07f;		   // Spacing of particles
 const float k = spacing / 1000.0f; // Far pressure weight
 const float k_near = k * 10.;	   // Near pressure weight
@@ -218,8 +215,11 @@ const float SIM_W = .8;		   // The size of the world
 const float bottom = 0;			   // The floor of the world
 const float i_girth = 1.f;		   // initial parameters
 
+float p_size = 4;		   // particle size
 int N = 500;
 float rest_density = 3.;	   // Rest Density
+float dT = 1.2;			// delta time, for step iteration
+float mass = 1.;
 
 // #define DEMO_Z_FIGHTING
 // #define DEMO_DEPTH_BUFFER
@@ -478,6 +478,7 @@ void initParticles(const unsigned int pN)
                 float z = radius * sin(angle);
 
                 Particle p;
+				p.mass = mass;
                 p.pos = glm::vec3(x, y, z) + 0.01f * glm::vec3(rand01(), rand01(), rand01());
                 p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
                 p.vel = glm::vec3(0, 0, 0);
@@ -523,6 +524,7 @@ void addMoreParticles(const unsigned int nP)
                 float z = radius * sin(angle);
 
                 Particle p;
+				p.mass = mass;
                 p.pos = glm::vec3(x, y, z) + 0.01f * glm::vec3(rand01(), rand01(), rand01());
                 p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
                 p.vel = glm::vec3(0, 0, 0);
@@ -580,101 +582,95 @@ void step()
 	// Simulation step
 
 	#pragma omp parallel for
-	for (int i = 0; i < (int)particles.size(); ++i)
+	for (auto &particle : particles)
 	{
-		// Apply the currently accumulated forces
-		particles[i].pos += particles[i].force;
+		// Apply the currently accumulated forces and update position
+        glm::vec3 acceleration = particle.force / particle.mass;
+        particle.pos += (acceleration * dT * dT);
 
 		// Restart the forces with gravity only. We'll add the rest later.
 		if (useGravity)
 		{
-			particles[i].force = glm::vec3(0.f, -::G, 0.f);
+			particle.force = glm::vec3(0.f, -particle.mass * ::G, 0.f);
 		}
 		else
 		{
-			particles[i].force = glm::vec3(0.f, 0.f, 0.f);
+			particle.force = glm::vec3(0.f, 0.f, 0.f);
 		}
 
 		// Calculate the velocity for later.
-		particles[i].vel = particles[i].pos - particles[i].pos_old;
+		particle.vel = (particle.pos - particle.pos_old) / dT;
 
 		// A small hack
 		const float max_vel = 2.0f;
-		const float vel_mag = glm::dot(particles[i].vel, particles[i].vel);
+		const float vel_mag = glm::dot(particle.vel, particle.vel);
 		// If the velocity is greater than the max velocity, then cut it in half.
 		if (vel_mag > max_vel * max_vel)
 		{
-			particles[i].vel *= .08f;
+			particle.vel *= max_vel / sqrt(vel_mag);
 		}
 
 		// Normal verlet stuff
-		particles[i].pos_old = particles[i].pos;
-		particles[i].pos += particles[i].vel;
+		particle.pos_old = particle.pos;
+		particle.pos += particle.vel * dT;
 
 		// If the Particle is outside the bounds of the world, then
 		// Make a little spring force to push it back in.
 		if (useGravity)
 		{
-			if (particles[i].pos.y >= container_height - 0.05)
-				enforceContainerBoundaries(particles[i]);
+			if (particle.pos.y >= container_height - 0.05)
+				enforceContainerBoundaries(particle);
 			else{
-			float bound;
-			if(!shrinkWorld)
-			{
-				bound = SIM_W;
-			}
-			else
-			{
-				bound = SIM_W * 3.f;
-			}
-			// // Calculate the distance of the particle from the circle center in the xz-plane
-			// float dx = particles[i].pos.x - 0.f; // center_x = 0
-			// float dz = particles[i].pos.z - 0.f; // center_z = 0
-			// float distance_from_center = sqrt(dx * dx + dz * dz);
+				float bound = shrinkWorld ? SIM_W * 3.f : SIM_W;
 
-			// // If the particle is outside the circular boundary
-			// if (distance_from_center > bound) {
-			// 	// Calculate the push-back force
-			// 	float excess_distance = distance_from_center - bound;
+				// // Calculate the distance of the particle from the circle center in the xz-plane
+				// float dx = particle.pos.x - 0.f; // center_x = 0
+				// float dz = particle.pos.z - 0.f; // center_z = 0
+				// float distance_from_center = sqrt(dx * dx + dz * dz);
 
-			// 	// Normalize the direction vector (dx, dz)
-			// 	float nx = dx / distance_from_center;
-			// 	float nz = dz / distance_from_center;
+				// // If the particle is outside the circular boundary
+				// if (distance_from_center > bound) {
+				// 	// Calculate the push-back force
+				// 	float excess_distance = distance_from_center - bound;
 
-			// 	// Apply force to push the particle back within the circle
-			// 	particles[i].force.x -= nx * excess_distance / 8;
-			// 	particles[i].force.z -= nz * excess_distance / 8;
-			// }
+				// 	// Normalize the direction vector (dx, dz)
+				// 	float nx = dx / distance_from_center;
+				// 	float nz = dz / distance_from_center;
 
-			if (particles[i].pos.x < -bound)
-				particles[i].force.x -= (particles[i].pos.x - -bound) / 8;
-			if (particles[i].pos.x > bound)
-				particles[i].force.x -= (particles[i].pos.x - bound) / 8;
+				// 	// Apply force to push the particle back within the circle
+				// 	particle.force.x -= nx * excess_distance / 8;
+				// 	particle.force.z -= nz * excess_distance / 8;
+				// }
 
-			if (particles[i].pos.z < -SIM_W)
-				particles[i].force.z -= (particles[i].pos.z - -SIM_W) / 8;
-			if (particles[i].pos.z > SIM_W)
-				particles[i].force.z -= (particles[i].pos.z - SIM_W) / 8;
+				if (particle.pos.x < -bound)
+					particle.force.x -= (particle.pos.x + bound) / 8.;
+				if (particle.pos.x > bound)
+					particle.force.x -= (particle.pos.x - bound) / 8.;
 
-			// Limit particles in y-axis (for bottom boundary)
-			if (particles[i].pos.y < bottom) {
-				particles[i].force.y -= (particles[i].pos.y) / 8;
-			}
+				if (particle.pos.z < -SIM_W)
+					particle.force.z -= (particle.pos.z + SIM_W) / 8.;
+				if (particle.pos.z > SIM_W)
+					particle.force.z -= (particle.pos.z - SIM_W) / 8.;
 
-			// if (particles[i].pos.y > bottom+10)
-			// 	particles[i].force.y -= (particles[i].pos.y - (bottom+10)) / 8;
+				// Limit particles in y-axis (for bottom boundary)
+				if (particle.pos.y < bottom) {
+					particle.force.y -= particle.pos.y / 8.;
+				}
+
+				// if (particle.pos.y > bottom+10)
+				// 	particle.force.y -= (particle.pos.y - (bottom+10)) / 8;
 			}
 		}
 
 		if (externalForce)
 		{
-			particles[i].force += glm::vec3(.002f * 0.025, 0.f, 0.f);
+			particle.force += glm::vec3(.002f * 0.025, 0.f, 0.f);
 		}
 
 		// Reset the nessecary items.
-		// particles[i].rho = 0;
-		// particles[i].rho_near = 0;
-		particles[i].neighbors.clear();
+		// particle.rho = 0;
+		// particle.rho_near = 0;
+		particle.neighbors.clear();
 	}
 
 	// update spatial index
@@ -688,10 +684,10 @@ void step()
 	// Calculate the density by basically making a weighted sum
 	// of the distances of neighboring particles within the radius of support (r)
 	#pragma omp parallel for
-	for (int i = 0; i < (int)particles.size(); ++i)
+	for (auto &particle : particles)
 	{
-		particles[i].rho = 0;
-		particles[i].rho_near = 0;
+		particle.rho = 0;
+		particle.rho_near = 0;
 
 		// We will sum up the 'near' and 'far' densities.
 		float d = 0;
@@ -699,17 +695,17 @@ void step()
 
 		IndexType::NeighborList neigh;
 		neigh.reserve(64);		// 64 original
-		indexsp.Neighbors(glm::vec3(particles[i].pos), neigh);
+		indexsp.Neighbors(glm::vec3(particle.pos), neigh);
 		for (int j = 0; j < (int)neigh.size(); ++j)
 		{
-			if (neigh[j] == &particles[i])
+			if (neigh[j] == &particle)
 			{
 				// do not calculate an interaction for a Particle with itself!
 				continue;
 			}
 
 			// The vector seperating the two particles
-			const glm::vec3 rij = neigh[j]->pos - particles[i].pos;
+			const glm::vec3 rij = neigh[j]->pos - particle.pos;
 
 			// Along with the squared distance between
 			const float rij_len2 = glm::dot(rij, rij);
@@ -733,38 +729,40 @@ void step()
 				n.j = neigh[j];
 				n.q = q;
 				n.q2 = q2;
-				particles[i].neighbors.push_back(n);
+				particle.neighbors.push_back(n);
 			}
 		}
 
-		particles[i].rho += d;
-		particles[i].rho_near += dn;
+		// Adjust density to use mass and volume approximation
+		float volume = (4.0f / 3.0f) * glm::pi<float>() * glm::pow(r*8., 3); // Volume of a sphere with radius r
+		particle.rho += (d * particle.mass) / volume;
+		particle.rho_near += (dn * particle.mass) / volume;
 	}
 
 	// PRESSURE
 	// Make the simple pressure calculation from the equation of state.
 	#pragma omp parallel for
-	for (int i = 0; i < (int)particles.size(); ++i)
+	for (auto &particle : particles)
 	{
-		particles[i].press = k * (particles[i].rho - rest_density);
-		particles[i].press_near = k_near * particles[i].rho_near;
+		particle.press = k * (particle.rho - rest_density);
+		particle.press_near = k_near * particle.rho_near;
 	}
 
 	// PRESSURE FORCE
 	// We will force particles in or out from their neighbors
 	// based on their difference from the rest density.
 	#pragma omp parallel for
-	for (int i = 0; i < (int)particles.size(); ++i)
+	for (auto &particle : particles)
 	{
 		// For each of the neighbors
 		glm::vec3 dX(0);
-		for (const Neighbor &n : particles[i].neighbors)
+		for (const Neighbor &n : particle.neighbors)
 		{
 			// The vector from Particle i to Particle j
-			const glm::vec3 rij = (*n.j).pos - particles[i].pos;
+			const glm::vec3 rij = (*n.j).pos - particle.pos;
 
 			// calculate the force from the pressures calculated above
-			const float dm = n.q * (particles[i].press + (*n.j).press) + n.q2 * (particles[i].press_near + (*n.j).press_near);
+			const float dm = n.q * (particle.press + (*n.j).press) + n.q2 * (particle.press_near + (*n.j).press_near);
 
 			// Get the direction of the force
 			const glm::vec3 D = glm::normalize(rij) * dm;
@@ -773,33 +771,33 @@ void step()
 
 		#pragma omp critical
 		{
-			particles[i].force -= dX;
+			particle.force -= dX;
 		}		
 	}
 
 	// Viscosity
 	// fprintf(stderr, "rho: %3.5f\n", 80000.f * fabs(glm::dot(particles[0].vel.x, particles[0].vel.z)));
 	#pragma omp parallel for
-	for (int i = 0; i < (int)particles.size(); ++i)
+	for (auto &particle : particles)
 	{
 		// We'll let the color be determined by
 		// ... x-velocity for the red component
 		// ... y-velocity for the green-component
-		// ... pressure for the blue component
-		particles[i].r = 0.3f + (80000.f * fabs(glm::dot(particles[i].vel.x, particles[i].vel.z)) );
-		particles[i].g = 0.3f + (60.f * fabs(particles[i].vel.y) );
-		particles[i].b = 0.3f + (.6f * particles[i].rho );
+		// ... density for the blue component
+		particle.r = 0.3f + (80000.f * fabs(glm::dot(particle.vel.x, particle.vel.z)) );
+		particle.g = 0.3f + (60.f * fabs(particle.vel.y) );
+		particle.b = 0.3f + (.6f * particle.rho );
 
 		// For each of that particles neighbors
-		for (const Neighbor &n : particles[i].neighbors)
+		for (const Neighbor &n : particle.neighbors)
 		{
-			const glm::vec3 rij = (*n.j).pos - particles[i].pos;
+			const glm::vec3 rij = (*n.j).pos - particle.pos;
 			const float l = glm::length(rij);
 			const float q = l / r;
 
 			const glm::vec3 rijn = (rij / l);
 			// Get the projection of the velocities onto the vector between them.
-			const float u = glm::dot(particles[i].vel - (*n.j).vel, rijn);
+			const float u = glm::dot(particle.vel - (*n.j).vel, rijn);
 			if (u > 0)
 			{
 				// Calculate the viscosity impulse between the two particles
@@ -807,10 +805,16 @@ void step()
 				const glm::vec3 I = (1 - q) * ((*n.j).sigma * u + (*n.j).beta * u * u) * rijn;
 
 				// Apply the impulses on the current particle
-				particles[i].vel -= I * 0.5f;
+				particle.vel -= I * 0.5f * dT;
 			}
 		}
 	}
+
+	#pragma omp parallel for
+    for (auto &particle : particles)
+    {
+        particle.vel += (particle.force / particle.mass) * dT; // Velocity update using F = ma
+    }
 }
 
 // main program:
