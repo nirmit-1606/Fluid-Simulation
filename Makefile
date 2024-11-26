@@ -1,6 +1,11 @@
-# fluid:		main.cpp
-# 		g++ -framework OpenGL -framework GLUT main.cpp -o fluid -I. -Wno-deprecated
+CXX = g++
+CXXFLAGS = -std=c++11 -Wno-deprecated -Xpreprocessor -fopenmp
+FRAMEWORKS = -framework OpenGL -framework GLUT
+INCLUDES = -Iinclude -I/opt/homebrew/include
+LIBS = -L/opt/homebrew/lib -L/opt/homebrew/opt/libomp/lib -lomp libglui.a
 
-fluid2:    main.cpp
-		g++ -framework OpenGL -framework GLUT main.cpp -o fluid -I. -Wno-deprecated -Xpreprocessor -fopenmp -I/opt/homebrew/include -L/opt/homebrew/lib -Iinclude libglui.a -L/opt/homebrew/opt/libomp/lib -lomp
-		
+fluid: main.cpp
+		$(CXX) $(CXXFLAGS) $(FRAMEWORKS) $(INCLUDES) main.cpp -o fluid $(LIBS)
+
+clean:
+		rm -f fluid
