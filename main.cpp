@@ -779,17 +779,16 @@ void step()
 	}
 
 	// Viscosity
-	// fprintf(stderr, "rho: %3.5f\n", 80000.f * fabs(glm::dot(particles[0].vel.x, particles[0].vel.z)));
 	#pragma omp parallel for
 	for (auto &particle : particles)
 	{
 		// We'll let the color be determined by
 		// ... xz-velocity for the red component
 		// ... y-velocity for the green-component
-		// ... density for the blue component
-		particle.r = 0.3f + (80000.f * fabs(glm::dot(2.f * glm::dot(particle.vel.x, particle.vel.z), particle.vel.y * 100.f)));
-		particle.g = 0.3f + (.4f * fabs(particle.mass) );
-		particle.b = 0.3f + (.6f * particle.rho );
+		// ... pressure for the blue component
+		particle.r = 0.3f + (80000.f * fabs(glm::dot(4.f * glm::dot(particle.vel.x, particle.vel.z), particle.vel.y * 100.f)));
+		particle.g = 0.3f + (.4f * fabs(particle.mass));
+		particle.b = 0.3f + (10000.f * fabs(particle.press));
 
 		// For each of that particles neighbors
 		for (const Neighbor &n : particle.neighbors)
