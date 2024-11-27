@@ -196,6 +196,7 @@ struct Particle
 	float press_near;
 	float sigma;
 	float beta;
+	float r_density;
 	std::vector<Neighbor> neighbors;
 };
 
@@ -217,7 +218,7 @@ const float i_girth = 1.f;		   // initial parameters
 
 float p_size = 4;		   // particle size
 int N = 500;
-float rest_density = 3.;	   // Rest Density
+float rest_density = 3.5;	   // Rest Density
 float dT = 1.2;			// delta time, for step iteration
 float mass = 1.;
 
@@ -485,6 +486,7 @@ void initParticles(const unsigned int pN)
                 p.force = glm::vec3(0, 0, 0);
                 p.sigma = 3.f;
                 p.beta = 4.f;
+				p.r_density = rest_density;
                 particles.push_back(p);
             }
         }
@@ -531,6 +533,7 @@ void addMoreParticles(const unsigned int nP)
                 p.force = glm::vec3(0, 0, 0);
                 p.sigma = 3.f;
                 p.beta = 4.f;
+				p.r_density = rest_density;
                 particles.push_back(p);
 			}
 		}
@@ -744,7 +747,7 @@ void step()
 	#pragma omp parallel for
 	for (auto &particle : particles)
 	{
-		particle.press = k * (particle.rho - rest_density);
+		particle.press = k * (particle.rho - particle.r_density);
 		particle.press_near = k_near * particle.rho_near;
 	}
 
@@ -781,11 +784,11 @@ void step()
 	for (auto &particle : particles)
 	{
 		// We'll let the color be determined by
-		// ... x-velocity for the red component
+		// ... xz-velocity for the red component
 		// ... y-velocity for the green-component
 		// ... density for the blue component
-		particle.r = 0.3f + (80000.f * fabs(glm::dot(particle.vel.x, particle.vel.z)) );
-		particle.g = 0.3f + (60.f * fabs(particle.vel.y) );
+		particle.r = 0.3f + (80000.f * fabs(glm::dot(2.f * glm::dot(particle.vel.x, particle.vel.z), particle.vel.y * 100.f)));
+		particle.g = 0.3f + (.4f * fabs(particle.mass) );
 		particle.b = 0.3f + (.6f * particle.rho );
 
 		// For each of that particles neighbors
@@ -912,7 +915,8 @@ void Display()
 
 	// erase the background:
 	// glDrawBuffer(GL_BACK);
-	glClearColor(.19f, .28f, .28f, 1.f);
+	// glClearColor(.19f, .28f, .28f, 1.f);
+	glClearColor(.19f + BackgroundIntensity, .28f + BackgroundIntensity, .28f + BackgroundIntensity, 1.f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glEnable(GL_DEPTH_TEST);
@@ -950,9 +954,19 @@ void Display()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
+	// Apply eye transformations
+	glTranslatef(EyeTransXYZ[0], EyeTransXYZ[1], EyeTransXYZ[2]); // Translation
+	glMultMatrixf(EyeRotMatrix); // Rotation matrix
+	glScalef(EyeScale2, EyeScale2, EyeScale2); // Uniform scaling
+
 	// set the eye position, look-at position, and up-vector:
 
 	gluLookAt(.5f, 2.f, 2.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f);
+
+	// Apply projection transformations
+	glTranslatef(ProjTransXYZ[0], ProjTransXYZ[1], ProjTransXYZ[2]); // Translation
+	glMultMatrixf(ProjRotMatrix); // Rotation matrix
+	glScalef(ProjScale2, ProjScale2, ProjScale2); // Uniform scaling
 
 	// rotate the scene:
 
