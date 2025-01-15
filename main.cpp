@@ -659,9 +659,6 @@ void step()
 				if (particle.pos.y < bottom) {
 					particle.force.y -= particle.pos.y / 8.;
 				}
-
-				// if (particle.pos.y > bottom+10)
-				// 	particle.force.y -= (particle.pos.y - (bottom+10)) / 8;
 			}
 		}
 
