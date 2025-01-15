@@ -912,8 +912,9 @@ void Display()
 
 	// erase the background:
 	// glDrawBuffer(GL_BACK);
-	glClearColor(.19f, .28f, .28f, 1.f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// glClearColor(.19f, .28f, .28f, 1.f);
+	glClearColor(.19f + BackgroundIntensity, .28f + BackgroundIntensity, .28f + BackgroundIntensity, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glEnable(GL_DEPTH_TEST);
 #ifdef DEMO_DEPTH_BUFFER
@@ -950,11 +951,21 @@ void Display()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	// set the eye position, look-at position, and up-vector:
+    // Apply eye transformations
+    glTranslatef(EyeTransXYZ[0], EyeTransXYZ[1], EyeTransXYZ[2]); // Translation
+    glMultMatrixf(EyeRotMatrix); // Rotation matrix
+    glScalef(EyeScale2, EyeScale2, EyeScale2); // Uniform scaling
 
-	gluLookAt(.5f, 2.f, 2.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f);
+    // set the eye position, look-at position, and up-vector:
 
-	// rotate the scene:
+    gluLookAt(.5f, 2.f, 2.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f);
+
+    // Apply projection transformations
+    glTranslatef(ProjTransXYZ[0], ProjTransXYZ[1], ProjTransXYZ[2]); // Translation
+    glMultMatrixf(ProjRotMatrix); // Rotation matrix
+    glScalef(ProjScale2, ProjScale2, ProjScale2); // Uniform scaling
+
+    // rotate the scene:
 
 	glRotatef((GLfloat)Yrot, 0.f, 1.f, 0.f);
 	glRotatef((GLfloat)Xrot, 1.f, 0.f, 0.f);
