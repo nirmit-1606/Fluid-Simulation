@@ -1081,11 +1081,13 @@ void Display()
 		else
 			glCallList(GridDL1);
 	}
-
+	
+	time1 = omp_get_wtime( );	// current clock time in seconds
+	
 	if (doSimulation){
 		
 		step();
-		time1 = omp_get_wtime( );	// current clock time in seconds
+		
 		// displayCnt++;
 		if (displayCnt < 50)
 		{
@@ -1150,7 +1152,7 @@ void Display()
 	// string to be displayed on screen
 	std::string textToDisplay1 = std::to_string(particles.size()) + " Particles";
 	std::string textToDisplay2 = "Rest density: " + std::to_string((int)rest_density);
-	std::string textToDisplay3 = "Frame Rate: " + std::to_string((float)avg_frameRate);
+	std::string textToDisplay3 = "Frame Rate: " + std::to_string((int)avg_frameRate);
 	char *textCharArray1 = &textToDisplay1[0u];
 	char *textCharArray2 = &textToDisplay2[0u];
 	char *textCharArray3 = &textToDisplay3[0u];
@@ -1161,7 +1163,7 @@ void Display()
 	}
 	if (DisplayFrameRate)
 	{
-		DoRasterString( 60.f, 2.5f, 0.f, textCharArray3 );
+		DoRasterString( 65.f, 2.5f, 0.f, textCharArray3 );
 	}
 	
 	// swap the double-buffered framebuffers:
@@ -1779,10 +1781,10 @@ void Reset()
 	doSimulation = false;
 	usePoints = false;
 	useGravity = true;
-	useColorVisual = false;
+	useColorVisual = true;
 	externalForce = false;
 	shrinkWorld = false;
-	useLighting = false;
+	useLighting = true;
 	useOpening = false;
 }
 
