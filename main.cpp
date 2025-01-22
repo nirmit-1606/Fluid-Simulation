@@ -992,6 +992,9 @@ void Display()
 		glDisable(GL_FOG);
 	}
 
+	double time0, time1;
+	time0 = omp_get_wtime( );	// current clock time in seconds
+
 	// possibly draw the axes:
 
 	if (AxesOn != 0)
@@ -1080,9 +1083,9 @@ void Display()
 	}
 
 	if (doSimulation){
-		double time0 = omp_get_wtime( );	// current clock time in seconds
+		
 		step();
-		double time1 = omp_get_wtime( );	// current clock time in seconds
+		time1 = omp_get_wtime( );	// current clock time in seconds
 		// displayCnt++;
 		if (displayCnt < 50)
 		{
