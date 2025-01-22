@@ -202,6 +202,7 @@ InitGluiFluid(void)
 
 	panel = GluiFluid->add_panel("Simulation", true);
 	GluiFluid->add_checkbox_to_panel(panel, "Simulate", &doSimulation);
+	GluiFluid->add_checkbox_to_panel(panel, "Use Points", &usePoints);
 	GluiFluid->add_checkbox_to_panel(panel, "Gravity", &useGravity);
 	GluiFluid->add_checkbox_to_panel(panel, "Color Visual", &useColorVisual);
 	GluiFluid->add_checkbox_to_panel(panel, "External Force", &externalForce);

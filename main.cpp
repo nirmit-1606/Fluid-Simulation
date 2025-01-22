@@ -250,6 +250,7 @@ double timeSum;
 float avg_frameRate = 0;
 
 int doSimulation;
+int usePoints;
 int useGravity;
 int useColorVisual;
 int externalForce;
@@ -1003,64 +1004,70 @@ void Display()
 
 	glEnable(GL_NORMALIZE);
 
-	// glPointSize(p_size);
-	// // SetMaterial(.2, .9, 1., 10.);
+	if (usePoints) {
+		glPointSize(p_size);
 
-	// // Enable vertex arrays for positions
-	// glVertexPointer(3, GL_FLOAT, sizeof(Particle), &particles[0].pos);
-	// glEnableClientState(GL_VERTEX_ARRAY);
+		// Enable vertex arrays for positions
+		glVertexPointer(3, GL_FLOAT, sizeof(Particle), &particles[0].pos);
+		glEnableClientState(GL_VERTEX_ARRAY);
 
-	// // Prepare and enable color arrays for particles
-	// std::vector<float> particleColors;
-	// particleColors.reserve(particles.size() * 3);  // r, g, b for each particle
+		// Prepare and enable color arrays for particles
+		std::vector<float> particleColors;
+		particleColors.reserve(particles.size() * 3);  // r, g, b for each particle
 
-	// for (const auto& particle : particles) {
-	// 	particleColors.push_back(particle.r); // red component
-	// 	particleColors.push_back(particle.g); // green component
-	// 	particleColors.push_back(particle.b); // blue component
-	// }
+		for (const auto& particle : particles) {
+			particleColors.push_back(particle.r); // red component
+			particleColors.push_back(particle.g); // green component
+			particleColors.push_back(particle.b); // blue component
+		}
 
-	// glColor3f(.5, .6, .9);
+		glColor3f(.5, .6, .9);
 
-	// // Use the color array
-	// glColorPointer(3, GL_FLOAT, 0, particleColors.data());
-	// if (useColorVisual)
-	// {
-	// 	glEnableClientState(GL_COLOR_ARRAY);
-	// }
-
-	// // Draw particles
-	// glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(particles.size()));
-
-	// // Disable arrays after drawing
-	// glDisableClientState(GL_VERTEX_ARRAY);
-	// glDisableClientState(GL_COLOR_ARRAY);
-
-	if (useLighting)
-	{
-		glEnable(GL_LIGHTING);
-		SetPointLight(GL_LIGHT0, -5., 5., 5., 1., 1., 1.);
-	}
-
-	// Iterate through your particles and draw spheres at their positions
-	for (const auto &particle : particles)
-	{
+		// Use the color array
+		glColorPointer(3, GL_FLOAT, 0, particleColors.data());
 		if (useColorVisual)
 		{
-			glColor3f(particle.r, particle.g, particle.b);
+			glEnableClientState(GL_COLOR_ARRAY);
 		}
-		else
-		{
-			glColor3f(.2, .9, 1.);
-		}
+
+		// Draw particles
+		glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(particles.size()));
+
+		// Disable arrays after drawing
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_COLOR_ARRAY);
+	
+	}
+
+	else{
+	
 		if (useLighting)
 		{
-			SetMaterial(particle.r, particle.g, particle.b, 5.);
+			glEnable(GL_LIGHTING);
+			SetPointLight(GL_LIGHT0, -5., 5., 5., 1., 1., 1.);
 		}
-		glPushMatrix();
-		glTranslatef(particle.pos.x, particle.pos.y, particle.pos.z); // Translate to the position of the particle
-		glCallList(ParticleList);									  // Draw low-poly sphere at the position
-		glPopMatrix();
+
+		// Iterate through your particles and draw spheres at their positions
+		for (const auto &particle : particles)
+		{
+			if (useColorVisual)
+			{
+				glColor3f(particle.r, particle.g, particle.b);
+			}
+			else
+			{
+				glColor3f(.2, .9, 1.);
+			}
+			if (useLighting)
+			{
+				SetMaterial(particle.r, particle.g, particle.b, 5.);
+			}
+			glPushMatrix();
+			glTranslatef(particle.pos.x, particle.pos.y, particle.pos.z); // Translate to the position of the particle
+			glCallList(ParticleList);									  // Draw low-poly sphere at the position
+			glPopMatrix();
+		}
+
 	}
 
 	if(useGravity)
@@ -1555,7 +1562,7 @@ void Keyboard(unsigned char c, int x, int y)
 
 	case 'p':
 	case 'P':
-		NowProjection = PERSP;
+		usePoints = !usePoints;
 		break;
 
 	case 'q':
@@ -1767,6 +1774,7 @@ void Reset()
 	particles.clear();
 	initParticles(N);
 	doSimulation = false;
+	usePoints = false;
 	useGravity = true;
 	useColorVisual = false;
 	externalForce = false;
