@@ -256,6 +256,7 @@ int useColorVisual;
 int externalForce;
 int shrinkWorld;
 int useLighting;
+int whichVisualization;
 int useOpening;
 int DisplayFrameRate = 0;
 int Verbose = 1;
@@ -611,7 +612,7 @@ void step()
 		// If the velocity is greater than the max velocity, then cut it in half.
 		if (vel_mag > max_vel * max_vel)
 		{
-			particle.vel *= max_vel / sqrt(vel_mag);
+			particle.vel /= max_vel;
 		}
 
 		// Normal verlet stuff
@@ -784,9 +785,29 @@ void step()
 		// ... xz-velocity for the red component
 		// ... y-velocity for the green-component
 		// ... pressure for the blue component
-		particle.r = 0.3f + (80000.f * fabs(glm::dot(4.f * glm::dot(particle.vel.x, particle.vel.z), particle.vel.y * 100.f)));
-		particle.g = 0.3f + (.4f * fabs(particle.mass));
-		particle.b = 0.3f + (10000.f * fabs(particle.press));
+		switch (whichVisualization)
+		{
+			case 0:
+				particle.r = 0.3f + (80000.f * fabs(glm::dot(particle.vel.x, particle.vel.z)) );
+				particle.g = 0.3f + (60.f * fabs(particle.vel.y) );
+				particle.b = 0.3f + (.6f * particle.rho );
+				break;
+
+			case 1:
+				particle.r = 0.3f + (80000.f * fabs(glm::dot(4.f * glm::dot(particle.vel.x, particle.vel.z), particle.vel.y * 100.f)));
+				particle.g = 0.3f + (.4f * fabs(particle.mass));
+				particle.b = 0.3f + (10000.f * fabs(particle.press));
+				break;
+
+			case 2:
+				particle.r = 0.3f + (80000.f * fabs(glm::dot(4.f * glm::dot(particle.vel.x, particle.vel.z), particle.vel.y * 100.f)));
+				particle.g = particle.r;
+				particle.b = 0.3f + (10000.f * fabs(particle.press));
+				break;
+			
+			default:
+				break;
+		}
 
 		// For each of that particles neighbors
 		for (const Neighbor &n : particle.neighbors)
@@ -810,11 +831,11 @@ void step()
 		}
 	}
 
-	#pragma omp parallel for
-    for (auto &particle : particles)
-    {
-        particle.vel += (particle.force / particle.mass) * dT; // Velocity update using F = ma
-    }
+	// #pragma omp parallel for
+    // for (auto &particle : particles)
+    // {
+    //     particle.vel += (particle.force / particle.mass) * dT; // Velocity update using F = ma
+    // }
 }
 
 // main program:

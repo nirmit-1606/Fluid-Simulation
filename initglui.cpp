@@ -28,6 +28,7 @@ void SetRestDensity(int id) {}
 void SetDT(int id) {}
 void SetMass(int id) {}
 void SetGravity(int id) {}
+void SetVisualization(int id) {}
 
 void
 GluiIdle(void)
@@ -209,18 +210,18 @@ InitGluiFluid(void)
 	GluiFluid->add_checkbox_to_panel(panel, "Increase boundary", &shrinkWorld);
 	GluiFluid->add_checkbox_to_panel(panel, "Lighting", &useLighting);
 
-	GLUI_Spinner* spinner = GluiFluid->add_spinner_to_panel(
-		panel,
-		"dT",
-		GLUI_SPINNER_FLOAT,
-		&dT,
-		1,
-		(GLUI_Update_CB)SetDT
-	);
-	// Set spinner limits
-	spinner->set_float_limits(0.8f, 1.6f, GLUI_LIMIT_CLAMP);
+	// GLUI_Spinner* spinner = GluiFluid->add_spinner_to_panel(
+	// 	panel,
+	// 	"dT",
+	// 	GLUI_SPINNER_FLOAT,
+	// 	&dT,
+	// 	1,
+	// 	(GLUI_Update_CB)SetDT
+	// );
+	// // Set spinner limits
+	// spinner->set_float_limits(0.8f, 1.6f, GLUI_LIMIT_CLAMP);
 
-	spinner = GluiFluid->add_spinner_to_panel(
+	GLUI_Spinner* spinner = GluiFluid->add_spinner_to_panel(
 		panel,
 		"Gravity",
 		GLUI_SPINNER_FLOAT,
@@ -232,6 +233,11 @@ InitGluiFluid(void)
 	spinner->set_float_limits(0.0f, 0.0006f, GLUI_LIMIT_CLAMP);
 
 
+	panel = GluiFluid->add_panel("Visualization", true);
+	GLUI_RadioGroup* visualization = new GLUI_RadioGroup(panel, &whichVisualization, -1, (GLUI_Update_CB)SetVisualization);
+	new GLUI_RadioButton( visualization, "Visual 1" );
+	new GLUI_RadioButton( visualization, "Visual 2" );
+	new GLUI_RadioButton( visualization, "Visual 3" );
 
 
 	panel = GluiFluid->add_panel("Add more particles", true);
