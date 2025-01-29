@@ -189,14 +189,10 @@ struct Particle
 	glm::vec3 pos_old;
 	glm::vec3 vel;
 	glm::vec3 force;
-	float mass;
 	float rho;
 	float rho_near;
 	float press;
 	float press_near;
-	float sigma;
-	float beta;
-	float r_density;
 	std::vector<Neighbor> neighbors;
 };
 
@@ -482,14 +478,10 @@ void initParticles(const unsigned int pN)
                 float z = radius * sin(angle);
 
                 Particle p;
-				p.mass = mass;
                 p.pos = glm::vec3(x, y, z) + 0.01f * glm::vec3(rand01(), rand01(), rand01());
                 p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
                 p.vel = glm::vec3(0, 0, 0);
                 p.force = glm::vec3(0, 0, 0);
-                p.sigma = 3.f;
-                p.beta = 4.f;
-				p.r_density = rest_density;
                 particles.push_back(p);
             }
         }
@@ -529,14 +521,10 @@ void addMoreParticles(const unsigned int nP)
                 float z = radius * sin(angle);
 
                 Particle p;
-				p.mass = mass;
                 p.pos = glm::vec3(x, y, z) + 0.01f * glm::vec3(rand01(), rand01(), rand01());
                 p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
                 p.vel = glm::vec3(0, 0, 0);
                 p.force = glm::vec3(0, 0, 0);
-                p.sigma = 3.f;
-                p.beta = 4.f;
-				p.r_density = rest_density;
                 particles.push_back(p);
 			}
 		}
@@ -591,13 +579,13 @@ void step()
 	for (auto &particle : particles)
 	{
 		// Apply the currently accumulated forces and update position
-        glm::vec3 acceleration = particle.force / particle.mass;
+        glm::vec3 acceleration = particle.force / mass;
         particle.pos += (acceleration * dT * dT);
 
 		// Restart the forces with gravity only. We'll add the rest later.
 		if (useGravity)
 		{
-			particle.force = glm::vec3(0.f, -particle.mass * ::G, 0.f);
+			particle.force = glm::vec3(0.f, -mass * ::G, 0.f);
 		}
 		else
 		{
@@ -738,8 +726,8 @@ void step()
 
 		// Adjust density to use mass and volume approximation
 		float volume = (4.0f / 3.0f) * glm::pi<float>() * glm::pow(r*8., 3); // Volume of a sphere with radius r
-		particle.rho += (d * particle.mass) / volume;
-		particle.rho_near += (dn * particle.mass) / volume;
+		particle.rho += (d * mass) / volume;
+		particle.rho_near += (dn * mass) / volume;
 	}
 
 	// PRESSURE
@@ -747,7 +735,7 @@ void step()
 	#pragma omp parallel for
 	for (auto &particle : particles)
 	{
-		particle.press = k * (particle.rho - particle.r_density);
+		particle.press = k * (particle.rho - rest_density);
 		particle.press_near = k_near * particle.rho_near;
 	}
 
@@ -796,7 +784,7 @@ void step()
 
 			case 1:
 				particle.r = 0.3f + (80000.f * fabs(glm::dot(4.f * glm::dot(particle.vel.x, particle.vel.z), particle.vel.y * 100.f)));
-				particle.g = 0.3f + (.4f * fabs(particle.mass));
+				particle.g = 0.3f + (.4f * fabs(mass));
 				particle.b = 0.3f + (10000.f * fabs(particle.press));
 				break;
 
@@ -824,7 +812,7 @@ void step()
 			{
 				// Calculate the viscosity impulse between the two particles
 				// based on the quadratic function of projected length.
-				const glm::vec3 I = (1 - q) * ((*n.j).sigma * u + (*n.j).beta * u * u) * rijn;
+				const glm::vec3 I = (1 - q) * (sigma * u + beta * u * u) * rijn;
 
 				// Apply the impulses on the current particle
 				particle.vel -= I * 0.5f * dT;

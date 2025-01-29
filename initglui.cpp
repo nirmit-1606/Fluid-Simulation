@@ -36,6 +36,9 @@ void SetSpacing(int id) {
 }
 void SetGravity(int id) {}
 void SetVisualization(int id) {}
+void SetParticles(int id) {}
+
+int add_n_particles = 500;
 
 void
 GluiIdle(void)
@@ -72,7 +75,7 @@ void Buttons(int id)
 		break;
 
 	case ADD:
-		addMoreParticles(500);
+		addMoreParticles(add_n_particles);
 		break;
 
 	default:
@@ -242,7 +245,7 @@ InitGluiFluid(void)
 	spinner->set_float_limits(0.0f, 0.0006f, GLUI_LIMIT_CLAMP);
 
 
-	panel = GluiFluid->add_panel("Particles", true);
+	panel = GluiFluid->add_panel("Properties", true);
 	spinner = GluiFluid->add_spinner_to_panel(
 		panel,
 		"spacing",
@@ -253,6 +256,28 @@ InitGluiFluid(void)
 	);
 	// Set spinner limits
 	spinner->set_float_limits(.04f, .1f, GLUI_LIMIT_CLAMP);
+	
+	spinner = GluiFluid->add_spinner_to_panel(
+		panel,
+		"Mass",
+		GLUI_SPINNER_FLOAT,
+		&mass,
+		1,
+		(GLUI_Update_CB)SetMass
+	);
+	// Set spinner limits
+	spinner->set_float_limits(0.1f, 2.0f, GLUI_LIMIT_CLAMP);
+
+	spinner = GluiFluid->add_spinner_to_panel(
+		panel,
+		"Rest Density",
+		GLUI_SPINNER_FLOAT,
+		&rest_density,
+		1,
+		(GLUI_Update_CB)SetRestDensity
+	);
+	// Set spinner limits
+	spinner->set_float_limits(1.f, 20.f, GLUI_LIMIT_CLAMP);
 
 
 	panel = GluiFluid->add_panel("Visualization", true);
@@ -265,25 +290,14 @@ InitGluiFluid(void)
 	panel = GluiFluid->add_panel("Add more particles", true);
 	spinner = GluiFluid->add_spinner_to_panel(
 		panel,
-		"Mass",
-		GLUI_SPINNER_FLOAT,
-		&mass,
+		"Particles",
+		GLUI_SPINNER_INT,
+		&add_n_particles,
 		1,
-		(GLUI_Update_CB)SetMass
+		(GLUI_Update_CB)SetParticles
 	);
 	// Set spinner limits
-	spinner->set_float_limits(0.1f, 5.0f, GLUI_LIMIT_CLAMP);
-
-	spinner = GluiFluid->add_spinner_to_panel(
-		panel,
-		"Rest Density",
-		GLUI_SPINNER_FLOAT,
-		&rest_density,
-		1,
-		(GLUI_Update_CB)SetRestDensity
-	);
-	// Set spinner limits
-	spinner->set_float_limits(1.0f, 15.0f, GLUI_LIMIT_CLAMP);
+	spinner->set_int_limits(100, 1000, GLUI_LIMIT_CLAMP);
 
 	GluiFluid->add_button_to_panel(panel, "Add", ADD, (GLUI_Update_CB)Buttons);
 	GluiFluid->add_checkbox_to_panel(panel, "Open Hole", &useOpening);
