@@ -37,6 +37,7 @@ void SetSpacing(int id) {
 void SetGravity(int id) {}
 void SetVisualization(int id) {}
 void SetParticles(int id) {}
+void SetViscosity(int id) {}
 
 int add_n_particles = 500;
 
@@ -266,7 +267,7 @@ InitGluiFluid(void)
 		(GLUI_Update_CB)SetMass
 	);
 	// Set spinner limits
-	spinner->set_float_limits(0.1f, 2.0f, GLUI_LIMIT_CLAMP);
+	spinner->set_float_limits(0.15f, 2.0f, GLUI_LIMIT_CLAMP);
 
 	spinner = GluiFluid->add_spinner_to_panel(
 		panel,
@@ -278,6 +279,30 @@ InitGluiFluid(void)
 	);
 	// Set spinner limits
 	spinner->set_float_limits(1.f, 20.f, GLUI_LIMIT_CLAMP);
+
+	panel1 = new GLUI_Panel(panel, "Viscosity", true);
+	GluiFluid->add_checkbox_to_panel(panel1, "use viscosity", &useViscosity);
+	spinner = GluiFluid->add_spinner_to_panel(
+		panel1,
+		"Sigma",
+		GLUI_SPINNER_FLOAT,
+		&sigma,
+		1,
+		(GLUI_Update_CB)SetViscosity
+	);
+	// Set spinner limits
+	spinner->set_float_limits(1.f, 15.f, GLUI_LIMIT_CLAMP);
+
+	spinner = GluiFluid->add_spinner_to_panel(
+		panel1,
+		"Beta",
+		GLUI_SPINNER_FLOAT,
+		&beta,
+		1,
+		(GLUI_Update_CB)SetViscosity
+	);
+	// Set spinner limits
+	spinner->set_float_limits(1.f, 15.f, GLUI_LIMIT_CLAMP);
 
 
 	panel = GluiFluid->add_panel("Visualization", true);

@@ -217,7 +217,7 @@ int N = 500;
 float rest_density = 3.5;	   // Rest Density
 float dT = 1.;			// delta time, for step iteration
 float mass = 1.;
-float sigma = 3., beta = 4.;
+float sigma = 1., beta = 4.;
 
 // #define DEMO_Z_FIGHTING
 // #define DEMO_DEPTH_BUFFER
@@ -253,6 +253,7 @@ int useColorVisual;
 int externalForce;
 int shrinkWorld;
 int useLighting;
+int useViscosity = false;
 int whichVisualization;
 int useOpening;
 int DisplayFrameRate = 0;
@@ -579,8 +580,10 @@ void step()
 	for (auto &particle : particles)
 	{
 		// Apply the currently accumulated forces and update position
-        glm::vec3 acceleration = particle.force / mass;
-        particle.pos += (acceleration * dT * dT);
+		if (!useViscosity) {
+			glm::vec3 acceleration = particle.force / mass;
+			particle.pos += (acceleration * dT * dT);
+		}
 
 		// Restart the forces with gravity only. We'll add the rest later.
 		if (useGravity)
@@ -592,21 +595,26 @@ void step()
 			particle.force = glm::vec3(0.f, 0.f, 0.f);
 		}
 
-		// Calculate the velocity for later.
-		particle.vel = (particle.pos - particle.pos_old) / dT;
+		if (!useViscosity) {
+			// Calculate the velocity for later.
+			particle.vel = (particle.pos - particle.pos_old) / dT;
+		}
 
 		// A small hack
-		const float max_vel = 2.0f;
+		const float max_vel = 1.0f;
 		const float vel_mag = glm::dot(particle.vel, particle.vel);
 		// If the velocity is greater than the max velocity, then cut it in half.
 		if (vel_mag > max_vel * max_vel)
 		{
-			particle.vel /= max_vel;
+			particle.vel /= 2.f;
 		}
 
 		// Normal verlet stuff
 		particle.pos_old = particle.pos;
 		particle.pos += particle.vel * dT;
+		if (useViscosity) {
+			particle.vel = (particle.pos - particle.pos_old) / dT;
+		}
 
 		// If the Particle is outside the bounds of the world, then
 		// Make a little spring force to push it back in.
@@ -798,33 +806,42 @@ void step()
 				break;
 		}
 
-		// For each of that particles neighbors
-		for (const Neighbor &n : particle.neighbors)
-		{
-			const glm::vec3 rij = (*n.j).pos - particle.pos;
-			const float l = glm::length(rij);
-			const float q = l / r;
-
-			const glm::vec3 rijn = (rij / l);
-			// Get the projection of the velocities onto the vector between them.
-			const float u = glm::dot(particle.vel - (*n.j).vel, rijn);
-			if (u > 0)
+		if (useViscosity) {
+			// For each of that particles neighbors
+			for (Neighbor &n : particle.neighbors)
 			{
-				// Calculate the viscosity impulse between the two particles
-				// based on the quadratic function of projected length.
-				const glm::vec3 I = (1 - q) * (sigma * u + beta * u * u) * rijn;
+				const glm::vec3 rij = (*n.j).pos - particle.pos;
+				const float l = glm::length(rij);
+				const float q = l / r;
 
-				// Apply the impulses on the current particle
-				particle.vel -= I * 0.5f * dT;
+
+				if (q < 1) {
+					const glm::vec3 rijn = (rij / l);
+					// Get the projection of the velocities onto the vector between them.
+					const float u = 2.f * glm::dot(particle.vel - (*n.j).vel, rijn);
+					if (u > 0)
+					{
+						// Calculate the viscosity impulse between the two particles
+						// based on the quadratic function of projected length.
+						const glm::vec3 I = (1 - q) * (sigma * u + beta * u * u) * rijn;
+
+						// Apply the impulses on the current and neighbor particle
+						particle.vel -= I * 0.5f * dT;
+						(*n.j).vel += I * 0.5f * dT;
+					}
+				}
 			}
 		}
+
 	}
 
-	// #pragma omp parallel for
-    // for (auto &particle : particles)
-    // {
-    //     particle.vel += (particle.force / particle.mass) * dT; // Velocity update using F = ma
-    // }
+	if (useViscosity) {
+		#pragma omp parallel for
+		for (auto &particle : particles)
+		{
+			particle.vel += (particle.force / mass) * dT; // Velocity update using F = ma
+		}
+	}
 }
 
 // main program:
