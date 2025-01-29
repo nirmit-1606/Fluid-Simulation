@@ -207,20 +207,21 @@ std::vector<Particle> particles;
 // Some constants for the relevant simulation.
 
 float G = .001f * .25;		   // Gravitational Constant for our simulation
-const float spacing = .07f;		   // Spacing of particles
-const float k = spacing / 1000.0f; // Far pressure weight
-const float k_near = k * 10.;	   // Near pressure weight
-const float r = spacing * 1.25f;   // Radius of Support
-const float rsq = r * r;		   // ... squared for performance stuff
+float spacing = .07f;		   // Spacing of particles
+float k = spacing / 1000.0f; // Far pressure weight
+float k_near = k * 10.;	   // Near pressure weight
+float r = spacing * 1.25f;   // Radius of Support
+float rsq = r * r;		   // ... squared for performance stuff
 const float SIM_W = .8;		   // The size of the world
 const float bottom = 0;			   // The floor of the world
 const float i_girth = 1.f;		   // initial parameters
 
-float p_size = 4;		   // particle size
+int p_size = 4;		   // particle size
 int N = 500;
 float rest_density = 3.5;	   // Rest Density
-float dT = 1.2;			// delta time, for step iteration
+float dT = 1.;			// delta time, for step iteration
 float mass = 1.;
+float sigma = 3., beta = 4.;
 
 // #define DEMO_Z_FIGHTING
 // #define DEMO_DEPTH_BUFFER
@@ -1614,46 +1615,6 @@ void Keyboard(unsigned char c, int x, int y)
 	case 'g':
 	case 'G':
 		useGravity = !useGravity;
-		break;
-	
-	case '1':
-		rest_density = 1.;
-		break;
-	
-	case '2':
-		rest_density = 2.;
-		break;
-
-	case '3':
-		rest_density = 3.;
-		break;
-	
-	case '4':
-		rest_density = 4.;
-		break;
-
-	case '5':
-		rest_density = 5.;
-		break;
-	
-	case '6':
-		rest_density = 6.;
-		break;
-
-	case '7':
-		rest_density = 7.;
-		break;
-	
-	case '8':
-		rest_density = 8.;
-		break;
-	
-	case '9':
-		rest_density = 9.;
-		break;
-	
-	case '0':
-		rest_density = 10.;
 		break;
 	
 	// used for gathering graph data

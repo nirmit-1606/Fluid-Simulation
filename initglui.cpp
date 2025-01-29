@@ -27,6 +27,13 @@ void SetBackgroundIntensity(int id) {}
 void SetRestDensity(int id) {}
 void SetDT(int id) {}
 void SetMass(int id) {}
+void SetPointSize(int id) {}
+void SetSpacing(int id) {
+	k = spacing / 1000.0f; // Far pressure weight
+ 	k_near = k * 10.;	   // Near pressure weight
+	r = spacing * 1.25f;   // Radius of Support
+	rsq = r * r;	
+}
 void SetGravity(int id) {}
 void SetVisualization(int id) {}
 
@@ -194,6 +201,7 @@ void
 InitGluiFluid(void)
 {
 	GLUI_Panel* panel;
+	GLUI_Spinner* spinner;
 
 	// setup the glui window:
 
@@ -203,25 +211,26 @@ InitGluiFluid(void)
 
 	panel = GluiFluid->add_panel("Simulation", true);
 	GluiFluid->add_checkbox_to_panel(panel, "Simulate", &doSimulation);
-	GluiFluid->add_checkbox_to_panel(panel, "Use Points", &usePoints);
 	GluiFluid->add_checkbox_to_panel(panel, "Gravity", &useGravity);
 	GluiFluid->add_checkbox_to_panel(panel, "Color Visual", &useColorVisual);
 	GluiFluid->add_checkbox_to_panel(panel, "External Force", &externalForce);
 	GluiFluid->add_checkbox_to_panel(panel, "Increase boundary", &shrinkWorld);
 	GluiFluid->add_checkbox_to_panel(panel, "Lighting", &useLighting);
 
-	// GLUI_Spinner* spinner = GluiFluid->add_spinner_to_panel(
-	// 	panel,
-	// 	"dT",
-	// 	GLUI_SPINNER_FLOAT,
-	// 	&dT,
-	// 	1,
-	// 	(GLUI_Update_CB)SetDT
-	// );
-	// // Set spinner limits
-	// spinner->set_float_limits(0.8f, 1.6f, GLUI_LIMIT_CLAMP);
+	GLUI_Panel* panel1 = new GLUI_Panel(panel, "Points", true);
+	new GLUI_Checkbox(panel1, "Use Points", &usePoints);
+	spinner = GluiFluid->add_spinner_to_panel(
+		panel1,
+		"Point size",
+		GLUI_SPINNER_INT,
+		&p_size,
+		1,
+		(GLUI_Update_CB)SetPointSize
+	);
+	// Set spinner limits
+	spinner->set_int_limits(1, 10, GLUI_LIMIT_CLAMP);
 
-	GLUI_Spinner* spinner = GluiFluid->add_spinner_to_panel(
+	spinner = GluiFluid->add_spinner_to_panel(
 		panel,
 		"Gravity",
 		GLUI_SPINNER_FLOAT,
@@ -231,6 +240,19 @@ InitGluiFluid(void)
 	);
 	// Set spinner limits
 	spinner->set_float_limits(0.0f, 0.0006f, GLUI_LIMIT_CLAMP);
+
+
+	panel = GluiFluid->add_panel("Particles", true);
+	spinner = GluiFluid->add_spinner_to_panel(
+		panel,
+		"spacing",
+		GLUI_SPINNER_FLOAT,
+		&spacing,
+		1,
+		(GLUI_Update_CB)SetSpacing
+	);
+	// Set spinner limits
+	spinner->set_float_limits(.04f, .1f, GLUI_LIMIT_CLAMP);
 
 
 	panel = GluiFluid->add_panel("Visualization", true);
