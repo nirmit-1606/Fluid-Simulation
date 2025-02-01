@@ -286,5 +286,5 @@ InitGluiFluid(void)
 	spinner->set_float_limits(1.0f, 15.0f, GLUI_LIMIT_CLAMP);
 
 	GluiFluid->add_button_to_panel(panel, "Add", ADD, (GLUI_Update_CB)Buttons);
-	GluiFluid->add_checkbox_to_panel(panel, "Open Hole", &useOpening);
+	GluiFluid->add_checkbox_to_panel(panel, "Opening", &useOpening);
 }
