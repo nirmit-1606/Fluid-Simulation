@@ -1104,11 +1104,12 @@ void Display()
 			glCallList(GridDL1);
 	}
 	
-	time1 = omp_get_wtime( );	// current clock time in seconds
 	
 	if (doSimulation){
 		
 		step();
+	
+		time1 = omp_get_wtime( );	// current clock time in seconds
 		
 		// displayCnt++;
 		if (displayCnt < 50)
