@@ -230,6 +230,7 @@ int AxesOn;			 // != 0 means to draw the axes
 GLuint ParticleList; // object display list
 GLuint GridDL1;		 // object display list
 GLuint GridDL2;		 // object display list
+GLuint DamDL;
 int DebugOn;		 // != 0 means to print debugging info
 int DepthCueOn;		 // != 0 means to use intensity depth cueing
 int DepthBufferOn;	 // != 0 means to use the z-buffer
@@ -249,6 +250,7 @@ float avg_frameRate = 0;
 int doSimulation;
 int usePoints;
 int useGravity;
+int useDam = 1;
 int useColorVisual;
 int externalForce;
 int shrinkWorld;
@@ -1108,6 +1110,11 @@ void Display()
 		else
 			glCallList(GridDL1);
 	}
+
+	if (useDam) {
+		glColor3f(.2, .3, .4);
+		glCallList(DamDL);
+	}
 	
 	
 	if (doSimulation){
@@ -1504,7 +1511,7 @@ void InitLists()
 		OsuSphere(0.03, 8, 8);
 	glEndList();
 
-#define YGRID	-0.07f
+#define YGRID	-0.035f
 
 #define XSIDE1	SIM_W*2			// length of the x side of the grid
 #define X01      (-XSIDE1/2.)		// where one side starts
@@ -1563,6 +1570,33 @@ void InitLists()
 			{
 				glVertex3f( X02 + DX2*(float)j, YGRID, Z02 + DZ2*(float)(i+0) );
 				glVertex3f( X02 + DX2*(float)j, YGRID, Z02 + DZ2*(float)(i+1) );
+			}
+			glEnd( );
+		}
+	glEndList( );
+
+#define XGRID	-0.5f
+#define YSIDE3	SIM_W			// length of the y side of the grid
+#define Y03      -0.035f		// where one side starts
+#define NY3	25			// how many points in y
+#define DY3	( YSIDE3/(float)NY3 )	// change in x between the points
+
+#define ZSIDE3	SIM_W*2			// length of the z side of the grid
+#define Z03      (-ZSIDE3/2.)		// where one side starts
+#define NZ3	50			// how many points in z
+#define DZ3	( ZSIDE3/(float)NZ3 )	// change in z between the points
+
+	DamDL = glGenLists( 1 );
+	glNewList( DamDL, GL_COMPILE );
+		SetMaterial( 1.f, 1.f, .6f, 10.f );
+		glNormal3f( 1., 0., 0. );
+		for( int i = 0; i < NZ3; i++ )
+		{
+			glBegin( GL_QUAD_STRIP );
+			for( int j = 0; j < NY3; j++ )
+			{
+				glVertex3f( XGRID, Y03 + DY3*(float)j, Z03 + DZ3*(float)(i+0) );
+				glVertex3f( XGRID, Y03 + DY3*(float)j, Z03 + DZ3*(float)(i+1) );
 			}
 			glEnd( );
 		}
