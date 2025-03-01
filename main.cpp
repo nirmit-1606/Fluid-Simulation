@@ -208,12 +208,12 @@ float k = spacing / 1000.0f; // Far pressure weight
 float k_near = k * 10.;	   // Near pressure weight
 float r = spacing * 1.25f;   // Radius of Support
 float rsq = r * r;		   // ... squared for performance stuff
-const float SIM_W = .8;		   // The size of the world
+const float SIM_W = .4;		   // The size of the world
 const float bottom = 0;			   // The floor of the world
-const float i_girth = 1.f;		   // initial parameters
+const float i_girth = .5f;		   // initial parameters
 
 int p_size = 4;		   // particle size
-int N = 500;
+int N = 2000;
 float rest_density = 3.5;	   // Rest Density
 float dT = 1.;			// delta time, for step iteration
 float mass = 1.;
@@ -229,7 +229,7 @@ GLuint AxesList;	 // list to hold the axes
 int AxesOn;			 // != 0 means to draw the axes
 GLuint ParticleList; // object display list
 GLuint GridDL1;		 // object display list
-GLuint GridDL2;		 // object display list
+GLuint CuboidDL;
 GLuint DamDL;
 int DebugOn;		 // != 0 means to print debugging info
 int DepthCueOn;		 // != 0 means to use intensity depth cueing
@@ -248,17 +248,16 @@ double timeSum;
 float avg_frameRate = 0;
 
 int doSimulation;
+int useBoundBox;
 int usePoints;
 int useGravity;
-int useDam = 1;
+int useDam;
+float dam_x = -0.4;
 int useColorVisual;
 int externalForce;
-int shrinkWorld;
 int useLighting;
-int useViscosity = false;
 int whichVisualization;
-int useOpening;
-int DisplayFrameRate = 0;
+int DisplayFrameRate = 1;
 int Verbose = 1;
 
 // function prototypes:
@@ -454,34 +453,26 @@ IndexType indexsp(4093, r*2);
 // --------------------------------------------------------------------
 void initParticles(const unsigned int pN)
 {
-	float layer_radius = i_girth * 0.2;  // Radius of the cylindrical layer
-    float maxHeight = 5.0;               // Maximum height of the cylinder
+	//float layer_radius = i_girth * 0.3;  // Radius of the cylindrical layer
+	float length = SIM_W * 2.;
+	float width = SIM_W;
+    float maxHeight = SIM_W * 3;               // Maximum height of the cylinder
     float minDistance = r * 0.5f;        // Minimum distance between particles
 
     for (float y = bottom + 0.1; y <= maxHeight; y += minDistance)
     {
         // Start from the center and place particles in concentric rings
-        for (float radius = 0; radius <= layer_radius; radius += minDistance)
+        for (float x = -width / 2.; x <= width / 2.; x += minDistance)
         {
-            // Number of particles around this radius (circumference / min distance)
-            int numParticles = (radius == 0) ? 1 : static_cast<int>((2 * M_PI * radius) / minDistance);
-
-            for (int i = 0; i < numParticles; ++i)
+            for (float z = -length / 2.; z <= length / 2.; z += minDistance)
             {
                 if (particles.size() >= pN)  // Stop if we reach the desired number of particles
                 {
                     return;
                 }
 
-                // Angle for this particle in the current ring
-                float angle = i * (2 * M_PI / numParticles);
-
-                // Convert polar coordinates (radius, angle) to Cartesian (x, z)
-                float x = radius * cos(angle);
-                float z = radius * sin(angle);
-
                 Particle p;
-                p.pos = glm::vec3(x, y, z) + 0.01f * glm::vec3(rand01(), rand01(), rand01());
+                p.pos = glm::vec3(x - 0.62f, y, z) + 0.01f * glm::vec3(rand01(), rand01(), rand01());
                 p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
                 p.vel = glm::vec3(0, 0, 0);
                 p.force = glm::vec3(0, 0, 0);
@@ -496,11 +487,11 @@ void addMoreParticles(const unsigned int nP)
 	// Number of particles already in the system
     unsigned int currentParticleCount = particles.size();
 
-	float layer_radius = i_girth * 0.2;  // Radius of the cylindrical layer
-    float maxHeight = 5.0;               // Maximum height of the cylinder
+	float layer_radius = i_girth * 0.3;  // Radius of the cylindrical layer
+    float maxHeight = SIM_W * 3;               // Maximum height of the cylinder
     float minDistance = r * 0.5f;        // Minimum distance between particles
 
-	for (float y = bottom + 1.8; y <= maxHeight; y += minDistance)
+	for (float y = bottom + 0.6; y <= maxHeight; y += minDistance)
     {
         // Start from the center and place particles in concentric rings
         for (float radius = 0; radius <= layer_radius; radius += minDistance)
@@ -524,7 +515,7 @@ void addMoreParticles(const unsigned int nP)
                 float z = radius * sin(angle);
 
                 Particle p;
-                p.pos = glm::vec3(x, y, z) + 0.01f * glm::vec3(rand01(), rand01(), rand01());
+                p.pos = glm::vec3(x - 0.62f, y, z) + 0.01f * glm::vec3(rand01(), rand01(), rand01());
                 p.pos_old = p.pos + 0.001f * glm::vec3(rand01(), rand01(), rand01());
                 p.vel = glm::vec3(0, 0, 0);
                 p.force = glm::vec3(0, 0, 0);
@@ -532,43 +523,6 @@ void addMoreParticles(const unsigned int nP)
 			}
 		}
 	}
-}
-
-// Define container properties
-const float container_height = 1.5f;    // Height of the container bottom
-const float container_top = container_height + 2.0f; // Top boundary of the container
-const float container_width = SIM_W / 2;     // Width of the container in the x and z directions
-const float opening_width = 0.2f;       // Width of the opening at the container's bottom
-
-void enforceContainerBoundaries(Particle &p) {
-    // Left and right walls in x-direction (container boundaries)
-    if (p.pos.x < -container_width) {
-        p.force.x -= (p.pos.x + container_width) / 8;
-    }
-    if (p.pos.x > container_width) {
-        p.force.x -= (p.pos.x - container_width) / 8;
-    }
-
-    // Front and back walls in z-direction (container boundaries)
-    if (p.pos.z < -container_width) {
-        p.force.z -= (p.pos.z + container_width) / 8;
-    }
-    if (p.pos.z > container_width) {
-        p.force.z -= (p.pos.z - container_width) / 8;
-    }
-
-    // Bottom boundary of the container, excluding the opening
-    if (p.pos.y < container_height && 
-		(!useOpening || (abs(p.pos.x) > opening_width / 2 || abs(p.pos.z) > opening_width / 2))) 
-    {
-        // Only apply force if particle is outside the opening
-        p.force.y -= (p.pos.y - container_height) / 8;
-    }
-
-    // Top boundary of the container
-    if (p.pos.y > container_top) {
-        p.force.y -= (p.pos.y - container_top) / 8;
-    }
 }
 
 
@@ -582,10 +536,8 @@ void step()
 	for (auto &particle : particles)
 	{
 		// Apply the currently accumulated forces and update position
-		if (!useViscosity) {
-			glm::vec3 acceleration = particle.force / mass;
-			particle.pos += (acceleration * dT * dT);
-		}
+		glm::vec3 acceleration = particle.force / mass;
+		particle.pos += (acceleration * dT * dT);
 
 		// Restart the forces with gravity only. We'll add the rest later.
 		if (useGravity)
@@ -597,10 +549,8 @@ void step()
 			particle.force = glm::vec3(0.f, 0.f, 0.f);
 		}
 
-		if (!useViscosity) {
-			// Calculate the velocity for later.
-			particle.vel = (particle.pos - particle.pos_old) / dT;
-		}
+		// Calculate the velocity for later.
+		particle.vel = (particle.pos - particle.pos_old) / dT;
 
 		// A small hack
 		const float max_vel = 1.0f;
@@ -614,53 +564,32 @@ void step()
 		// Normal verlet stuff
 		particle.pos_old = particle.pos;
 		particle.pos += particle.vel * dT;
-		if (useViscosity) {
-			particle.vel = (particle.pos - particle.pos_old) / dT;
-		}
 
 		// If the Particle is outside the bounds of the world, then
 		// Make a little spring force to push it back in.
 		if (useGravity)
 		{
-			if (particle.pos.y >= container_height - 0.05)
-				enforceContainerBoundaries(particle);
-			else{
-				float bound = shrinkWorld ? SIM_W * 3.f : SIM_W;
+			float Xbound = SIM_W * 2.;
+			float Zbound = SIM_W * 1.;
 
-				// // Calculate the distance of the particle from the circle center in the xz-plane
-				// float dx = particle.pos.x - 0.f; // center_x = 0
-				// float dz = particle.pos.z - 0.f; // center_z = 0
-				// float distance_from_center = sqrt(dx * dx + dz * dz);
-
-				// // If the particle is outside the circular boundary
-				// if (distance_from_center > bound) {
-				// 	// Calculate the push-back force
-				// 	float excess_distance = distance_from_center - bound;
-
-				// 	// Normalize the direction vector (dx, dz)
-				// 	float nx = dx / distance_from_center;
-				// 	float nz = dz / distance_from_center;
-
-				// 	// Apply force to push the particle back within the circle
-				// 	particle.force.x -= nx * excess_distance / 8;
-				// 	particle.force.z -= nz * excess_distance / 8;
-				// }
-
-				if (particle.pos.x < -bound)
-					particle.force.x -= (particle.pos.x + bound) / 8.;
-				if (particle.pos.x > bound)
-					particle.force.x -= (particle.pos.x - bound) / 8.;
-
-				if (particle.pos.z < -SIM_W)
-					particle.force.z -= (particle.pos.z + SIM_W) / 8.;
-				if (particle.pos.z > SIM_W)
-					particle.force.z -= (particle.pos.z - SIM_W) / 8.;
-
-				// Limit particles in y-axis (for bottom boundary)
-				if (particle.pos.y < bottom) {
-					particle.force.y -= particle.pos.y / 8.;
-				}
+			if (particle.pos.x < -Xbound)
+				particle.force.x -= (particle.pos.x + Xbound) / 8.;
+			if (useDam) {
+				if (particle.pos.x > dam_x - 0.035)
+					particle.force.x -= (particle.pos.x - (dam_x - 0.035)) / 8.;
+			} else {
+				if (particle.pos.x > Xbound)
+					particle.force.x -= (particle.pos.x - Xbound) / 8.;
 			}
+			if (particle.pos.z < -Zbound)
+				particle.force.z -= (particle.pos.z + Zbound) / 8.;
+			if (particle.pos.z > Zbound)
+				particle.force.z -= (particle.pos.z - Zbound) / 8.;
+			// Limit particles in y-axis (for bottom boundary)
+			if (particle.pos.y < bottom)
+				particle.force.y -= particle.pos.y / 8.;
+			if (particle.pos.y > SIM_W * 3)
+					particle.force.y -= (particle.pos.y - SIM_W * 3) / 8.;
 		}
 
 		if (externalForce)
@@ -808,42 +737,8 @@ void step()
 				break;
 		}
 
-		if (useViscosity) {
-			// For each of that particles neighbors
-			for (Neighbor &n : particle.neighbors)
-			{
-				const glm::vec3 rij = (*n.j).pos - particle.pos;
-				const float l = glm::length(rij);
-				const float q = l / r;
-
-
-				if (q < 1) {
-					const glm::vec3 rijn = (rij / l);
-					// Get the projection of the velocities onto the vector between them.
-					const float u = 2.f * glm::dot(particle.vel - (*n.j).vel, rijn);
-					if (u > 0)
-					{
-						// Calculate the viscosity impulse between the two particles
-						// based on the quadratic function of projected length.
-						const glm::vec3 I = (1 - q) * (sigma * u + beta * u * u) * rijn;
-
-						// Apply the impulses on the current and neighbor particle
-						particle.vel -= I * 0.5f * dT;
-						(*n.j).vel += I * 0.5f * dT;
-					}
-				}
-			}
-		}
-
 	}
 
-	if (useViscosity) {
-		#pragma omp parallel for
-		for (auto &particle : particles)
-		{
-			particle.vel += (particle.force / mass) * dT; // Velocity update using F = ma
-		}
-	}
 }
 
 // main program:
@@ -1028,8 +923,19 @@ void Display()
 
 	if (AxesOn != 0)
 	{
+		glPushMatrix();
 		glColor3fv(&Colors[NowColor][0]);
 		glCallList(AxesList);
+		glPopMatrix();
+	}
+
+	if (useBoundBox) {
+		glPushMatrix();
+		// glColor3f(.8, .5, .3);
+		glColor3fv(&Colors[NowColor][0]);
+		glTranslatef(0.f, (SIM_W * 3. / 2.) - 0.035, 0.f);
+		glCallList(CuboidDL);
+		glPopMatrix();
 	}
 
 	// since we are using glScalef( ), be sure the normals get unitized:
@@ -1037,6 +943,7 @@ void Display()
 	glEnable(GL_NORMALIZE);
 
 	if (usePoints) {
+		glPushMatrix();
 		glPointSize(p_size);
 
 		// Enable vertex arrays for positions
@@ -1068,11 +975,12 @@ void Display()
 		// Disable arrays after drawing
 		glDisableClientState(GL_VERTEX_ARRAY);
 		glDisableClientState(GL_COLOR_ARRAY);
-	
+
+		glPopMatrix();
 	}
 
 	else{
-	
+		glPushMatrix();
 		if (useLighting)
 		{
 			glEnable(GL_LIGHTING);
@@ -1099,21 +1007,23 @@ void Display()
 			glCallList(ParticleList);									  // Draw low-poly sphere at the position
 			glPopMatrix();
 		}
-
+		glPopMatrix();
 	}
 
 	if(useGravity)
 	{
+		glPushMatrix();
 		glColor3f(.1, .2, .3);
-		if (shrinkWorld)
-			glCallList(GridDL2);
-		else
-			glCallList(GridDL1);
+		glCallList(GridDL1);
+		glPopMatrix();
 	}
 
 	if (useDam) {
+		glPushMatrix();
 		glColor3f(.2, .3, .4);
+		glTranslatef(dam_x, 0.f, 0.f);
 		glCallList(DamDL);
+		glPopMatrix();
 	}
 	
 	
@@ -1186,15 +1096,12 @@ void Display()
 	glColor3f(1.f, 1.f, 1.f);
 	// string to be displayed on screen
 	std::string textToDisplay1 = std::to_string(particles.size()) + " Particles";
-	std::string textToDisplay2 = "Rest density: " + std::to_string((int)rest_density);
 	std::string textToDisplay3 = "Frame Rate: " + std::to_string((int)avg_frameRate);
 	char *textCharArray1 = &textToDisplay1[0u];
-	char *textCharArray2 = &textToDisplay2[0u];
 	char *textCharArray3 = &textToDisplay3[0u];
 	if (Verbose)
 	{
-		DoRasterString( 5.f, 7.f, 0.f, textCharArray1 );
-		DoRasterString( 5.f, 2.5f, 0.f, textCharArray2 );
+		DoRasterString( 5.f, 2.5f, 0.f, textCharArray1 );
 	}
 	if (DisplayFrameRate)
 	{
@@ -1513,7 +1420,7 @@ void InitLists()
 
 #define YGRID	-0.035f
 
-#define XSIDE1	SIM_W*2			// length of the x side of the grid
+#define XSIDE1	SIM_W*4			// length of the x side of the grid
 #define X01      (-XSIDE1/2.)		// where one side starts
 #define NX1	50			// how many points in x
 #define DX1	( XSIDE1/(float)NX1 )	// change in x between the points
@@ -1530,6 +1437,7 @@ void InitLists()
 	// float YGRID = 0.f;
 	GridDL1 = glGenLists( 1 );
 	glNewList( GridDL1, GL_COMPILE );
+		glPushMatrix();
 		SetMaterial( 1.f, 1.f, .6f, 10.f );
 		glNormal3f( 0., 1., 0. );
 		for( int i = 0; i < NZ1; i++ )
@@ -1542,41 +1450,51 @@ void InitLists()
 			}
 			glEnd( );
 		}
+		glPopMatrix();
 	glEndList( );
 
-#define XSIDE2	SIM_W*6			// length of the x side of the grid
-#define X02      (-XSIDE2/2.)		// where one side starts
-#define NX2	150			// how many points in x
-#define DX2	( XSIDE2/(float)NX2 )	// change in x between the points
+#define CUBOID_WIDTH  SIM_W * 4
+#define CUBOID_HEIGHT SIM_W * 3
+#define CUBOID_DEPTH  SIM_W * 2
 
-#define ZSIDE2	SIM_W*2			// length of the z side of the grid
-#define Z02      (-ZSIDE2/2.)		// where one side starts
-#define NZ2	50			// how many points in z
-#define DZ2	( ZSIDE2/(float)NZ2 )	// change in z between the points
+#define X_MIN (-CUBOID_WIDTH / 2.0f)
+#define X_MAX ( CUBOID_WIDTH / 2.0f) - 0.03
+#define Y_MIN (-CUBOID_HEIGHT / 2.0f)
+#define Y_MAX ( CUBOID_HEIGHT / 2.0f)
+#define Z_MIN (-CUBOID_DEPTH / 2.0f)
+#define Z_MAX ( CUBOID_DEPTH / 2.0f)
 
-	// int NZ = 100, NX = 100;
-	// float xside = SIM_W*5, zside = SIM_W*5;
-	// float X0 = xside/2.f, Z0 = zside/2.f;
-	// float DX = xside/(float)NX, DZ = zside/(float)NZ;
-	// float YGRID = 0.f;
-	GridDL2 = glGenLists( 1 );
-	glNewList( GridDL2, GL_COMPILE );
-		SetMaterial( 0.3f, .8f, 1.f, 10.f );
-		glNormal3f( 0., 1., 0. );
-		for( int i = 0; i < NZ2; i++ )
-		{
-			glBegin( GL_QUAD_STRIP );
-			for( int j = 0; j < NX2; j++ )
-			{
-				glVertex3f( X02 + DX2*(float)j, YGRID, Z02 + DZ2*(float)(i+0) );
-				glVertex3f( X02 + DX2*(float)j, YGRID, Z02 + DZ2*(float)(i+1) );
-			}
-			glEnd( );
-		}
-	glEndList( );
+	CuboidDL = glGenLists(1);
+	glNewList(CuboidDL, GL_COMPILE);
+		glPushMatrix();
+		glLineWidth(2.0); // Adjust line width as needed
+		glBegin(GL_LINES);
 
-#define XGRID	-0.5f
-#define YSIDE3	SIM_W			// length of the y side of the grid
+		// Bottom face
+		glVertex3f(X_MIN, Y_MIN, Z_MIN); glVertex3f(X_MAX, Y_MIN, Z_MIN);
+		glVertex3f(X_MAX, Y_MIN, Z_MIN); glVertex3f(X_MAX, Y_MIN, Z_MAX);
+		glVertex3f(X_MAX, Y_MIN, Z_MAX); glVertex3f(X_MIN, Y_MIN, Z_MAX);
+		glVertex3f(X_MIN, Y_MIN, Z_MAX); glVertex3f(X_MIN, Y_MIN, Z_MIN);
+
+		// Top face
+		glVertex3f(X_MIN, Y_MAX, Z_MIN); glVertex3f(X_MAX, Y_MAX, Z_MIN);
+		glVertex3f(X_MAX, Y_MAX, Z_MIN); glVertex3f(X_MAX, Y_MAX, Z_MAX);
+		glVertex3f(X_MAX, Y_MAX, Z_MAX); glVertex3f(X_MIN, Y_MAX, Z_MAX);
+		glVertex3f(X_MIN, Y_MAX, Z_MAX); glVertex3f(X_MIN, Y_MAX, Z_MIN);
+
+		// Vertical edges
+		glVertex3f(X_MIN, Y_MIN, Z_MIN); glVertex3f(X_MIN, Y_MAX, Z_MIN);
+		glVertex3f(X_MAX, Y_MIN, Z_MIN); glVertex3f(X_MAX, Y_MAX, Z_MIN);
+		glVertex3f(X_MAX, Y_MIN, Z_MAX); glVertex3f(X_MAX, Y_MAX, Z_MAX);
+		glVertex3f(X_MIN, Y_MIN, Z_MAX); glVertex3f(X_MIN, Y_MAX, Z_MAX);
+
+		glEnd();
+		glLineWidth(2.0);
+		glPopMatrix();
+	glEndList();
+
+#define XGRID	0.f
+#define YSIDE3	SIM_W*3			// length of the y side of the grid
 #define Y03      -0.035f		// where one side starts
 #define NY3	25			// how many points in y
 #define DY3	( YSIDE3/(float)NY3 )	// change in x between the points
@@ -1588,6 +1506,7 @@ void InitLists()
 
 	DamDL = glGenLists( 1 );
 	glNewList( DamDL, GL_COMPILE );
+		glPushMatrix();
 		SetMaterial( 1.f, 1.f, .6f, 10.f );
 		glNormal3f( 1., 0., 0. );
 		for( int i = 0; i < NZ3; i++ )
@@ -1600,6 +1519,7 @@ void InitLists()
 			}
 			glEnd( );
 		}
+		glPopMatrix();
 	glEndList( );
 
 	// create the axes:
@@ -1623,8 +1543,7 @@ void Keyboard(unsigned char c, int x, int y)
 	{
 	case 'o':
 	case 'O':
-		// NowProjection = ORTHO;
-		useOpening = !useOpening;
+		NowProjection = ORTHO;
 		break;
 
 	case 'p':
@@ -1671,10 +1590,6 @@ void Keyboard(unsigned char c, int x, int y)
 
 	case 'e':
 		externalForce = !externalForce;
-		break;
-
-	case 'r':
-		shrinkWorld = !shrinkWorld;
 		break;
 
 	default:
@@ -1800,14 +1715,14 @@ void Reset()
 	timeSum = 0;
 	particles.clear();
 	initParticles(N);
-	doSimulation = false;
+	doSimulation = true;
+	useBoundBox = true;
 	usePoints = false;
 	useGravity = true;
+	useDam = true;
 	useColorVisual = true;
 	externalForce = false;
-	shrinkWorld = false;
 	useLighting = true;
-	useOpening = false;
 }
 
 // called when user resizes the window:

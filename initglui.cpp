@@ -28,6 +28,7 @@ void SetRestDensity(int id) {}
 void SetDT(int id) {}
 void SetMass(int id) {}
 void SetPointSize(int id) {}
+void SetDamX(int id) {}
 void SetSpacing(int id) {
 	k = spacing / 1000.0f; // Far pressure weight
  	k_near = k * 10.;	   // Near pressure weight
@@ -218,10 +219,22 @@ InitGluiFluid(void)
 	GluiFluid->add_checkbox_to_panel(panel, "Gravity", &useGravity);
 	GluiFluid->add_checkbox_to_panel(panel, "Color Visual", &useColorVisual);
 	GluiFluid->add_checkbox_to_panel(panel, "External Force", &externalForce);
-	GluiFluid->add_checkbox_to_panel(panel, "Increase boundary", &shrinkWorld);
 	GluiFluid->add_checkbox_to_panel(panel, "Lighting", &useLighting);
 
-	GLUI_Panel* panel1 = new GLUI_Panel(panel, "Points", true);
+	GLUI_Panel* panel1 = new GLUI_Panel(panel, "Dam", true);
+	new GLUI_Checkbox(panel1, "Use Dam", &useDam);
+	spinner = GluiFluid->add_spinner_to_panel(
+		panel1,
+		"X-position",
+		GLUI_SPINNER_FLOAT,
+		&dam_x,
+		1,
+		(GLUI_Update_CB)SetDamX
+	);
+	// Set spinner limits
+	spinner->set_float_limits(-SIM_W*2., SIM_W*2, GLUI_LIMIT_CLAMP);
+
+	panel1 = new GLUI_Panel(panel, "Points", true);
 	new GLUI_Checkbox(panel1, "Use Points", &usePoints);
 	spinner = GluiFluid->add_spinner_to_panel(
 		panel1,
@@ -280,31 +293,6 @@ InitGluiFluid(void)
 	// Set spinner limits
 	spinner->set_float_limits(1.f, 20.f, GLUI_LIMIT_CLAMP);
 
-	panel1 = new GLUI_Panel(panel, "Viscosity", true);
-	GluiFluid->add_checkbox_to_panel(panel1, "use viscosity", &useViscosity);
-	spinner = GluiFluid->add_spinner_to_panel(
-		panel1,
-		"Sigma",
-		GLUI_SPINNER_FLOAT,
-		&sigma,
-		1,
-		(GLUI_Update_CB)SetViscosity
-	);
-	// Set spinner limits
-	spinner->set_float_limits(1.f, 15.f, GLUI_LIMIT_CLAMP);
-
-	spinner = GluiFluid->add_spinner_to_panel(
-		panel1,
-		"Beta",
-		GLUI_SPINNER_FLOAT,
-		&beta,
-		1,
-		(GLUI_Update_CB)SetViscosity
-	);
-	// Set spinner limits
-	spinner->set_float_limits(1.f, 15.f, GLUI_LIMIT_CLAMP);
-
-
 	panel = GluiFluid->add_panel("Visualization", true);
 	GLUI_RadioGroup* visualization = new GLUI_RadioGroup(panel, &whichVisualization, -1, (GLUI_Update_CB)SetVisualization);
 	new GLUI_RadioButton( visualization, "Visual 1" );
@@ -325,5 +313,4 @@ InitGluiFluid(void)
 	spinner->set_int_limits(100, 1000, GLUI_LIMIT_CLAMP);
 
 	GluiFluid->add_button_to_panel(panel, "Add", ADD, (GLUI_Update_CB)Buttons);
-	GluiFluid->add_checkbox_to_panel(panel, "Opening", &useOpening);
 }
