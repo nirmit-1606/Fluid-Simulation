@@ -1179,15 +1179,12 @@ void Display()
 	glColor3f(1.f, 1.f, 1.f);
 	// string to be displayed on screen
 	std::string textToDisplay1 = std::to_string(particles.size()) + " Particles";
-	std::string textToDisplay2 = "Rest density: " + std::to_string((int)rest_density);
 	std::string textToDisplay3 = "Frame Rate: " + std::to_string((int)avg_frameRate);
 	char *textCharArray1 = &textToDisplay1[0u];
-	char *textCharArray2 = &textToDisplay2[0u];
 	char *textCharArray3 = &textToDisplay3[0u];
 	if (Verbose)
 	{
-		DoRasterString( 5.f, 7.f, 0.f, textCharArray1 );
-		DoRasterString( 5.f, 2.5f, 0.f, textCharArray2 );
+		DoRasterString( 5.f, 2.5f, 0.f, textCharArray1 );
 	}
 	if (DisplayFrameRate)
 	{
