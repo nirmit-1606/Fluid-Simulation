@@ -459,7 +459,7 @@ void initParticles(const unsigned int pN)
     float maxHeight = SIM_W * 3;               // Maximum height of the cylinder
     float minDistance = r * 0.5f;        // Minimum distance between particles
 
-    for (float y = bottom + 0.1; y <= maxHeight; y += minDistance)
+    for (float y = bottom; y <= maxHeight; y += minDistance)
     {
         // Start from the center and place particles in concentric rings
         for (float x = -width / 2.; x <= width / 2.; x += minDistance)
